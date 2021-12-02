@@ -1,17 +1,22 @@
 import { Static, Type } from '@sinclair/typebox'
 
+/**
+ * General schemas and types
+ */
 const ErrorSchema =  Type.Object({
   code: Type.String(),
   statusCode: Type.Optional(Type.Number()),
   message: Type.String()
 });
 
-// user POST
+/**
+ * User related schemas and types
+ */
+
 const PostUserSchema = Type.Object({
   Body: Type.Object({
-    firstName: Type.String(),
-    lastName: Type.String(),
-    ghin: Type.String()
+    ghin: Type.String(),
+    groupIds: Type.Array(Type.String())
   }),
   Reply: Type.Union([
     Type.Object({

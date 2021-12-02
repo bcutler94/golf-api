@@ -1,8 +1,15 @@
 import fastify, { FastifyError } from 'fastify';
-import userHander from './handlers/user-hander';
+import userHander from './route-handlers/user-hander';
 import userSchema, { PostUserType } from './schemas/user-schema';
+import './mongo/database';
 
-const server = fastify();
+const server = fastify({ logger: { prettyPrint: true } });
+export const logger = server.log
+
+// user routes
+server.get('/test', async (req, rep) => {
+  rep.send('yo ben')
+})
 
 // user routes
 server.post<PostUserType>('/user', userSchema.userPost, async (req, rep) => {

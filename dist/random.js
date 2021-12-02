@@ -5,11 +5,6 @@ var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __markAsModule = (target) => __defProp(target, "__esModule", { value: true });
-var __export = (target, all) => {
-  __markAsModule(target);
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
 var __reExport = (target, module2, desc) => {
   if (module2 && typeof module2 === "object" || typeof module2 === "function") {
     for (let key of __getOwnPropNames(module2))
@@ -22,10 +17,10 @@ var __toModule = (module2) => {
   return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? { get: () => module2.default, enumerable: true } : { value: module2, enumerable: true })), module2);
 };
 
+// src/networking/ghin-api.ts
+var import_gaxios = __toModule(require("gaxios"));
+
 // src/index.ts
-__export(exports, {
-  logger: () => logger
-});
 var import_fastify = __toModule(require("fastify"));
 
 // src/route-handlers/user-hander.ts
@@ -84,7 +79,7 @@ run().catch(console.dir);
 var database_default = client.db("golf");
 
 // src/index.ts
-var server = (0, import_fastify.default)({ logger: true });
+var server = (0, import_fastify.default)({ logger: { prettyPrint: true } });
 var logger = server.log;
 server.get("/test", async (req, rep) => {
   rep.send("yo ben");
@@ -105,7 +100,53 @@ server.listen(8080, (err, address) => {
   }
   console.log(`Server listening at ${address}`);
 });
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
-  logger
-});
+
+// src/networking/ghin-api.ts
+var GHIN_URL = "https://api.ghin.com/api/v1";
+var GHIN_EMAIL = "bcutler94@gmail.com";
+var GHIN_PASSWORD = "Liverpool13";
+import_gaxios.default.instance.defaults = {
+  baseURL: GHIN_URL,
+  retry: true,
+  responseType: "json"
+};
+var login = async () => {
+  try {
+    const res = await import_gaxios.default.request({
+      method: "POST",
+      url: "/users/login.json",
+      data: {
+        user: {
+          email: GHIN_EMAIL,
+          password: GHIN_PASSWORD
+        }
+      }
+    });
+    return res.data.token;
+  } catch (e) {
+    logger.error(e);
+    throw e;
+  }
+};
+var getUser = async (ghin) => {
+  try {
+    const token = await login();
+    const res = await import_gaxios.default.request({
+      method: "GET",
+      url: `/golfers.json?golfer_id=${ghin}&from_ghin=true`,
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    logger.info(res.data);
+    return res.data;
+  } catch (e) {
+    logger.error(e);
+  }
+};
+var ghin_api_default = {
+  getUser
+};
+
+// src/random.ts
+ghin_api_default.getUser("2617288");
