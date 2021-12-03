@@ -84,7 +84,7 @@ run().catch(console.dir);
 var database_default = client.db("golf");
 
 // src/index.ts
-var server = (0, import_fastify.default)({ logger: true });
+var server = (0, import_fastify.default)({ logger: { prettyPrint: true } });
 var logger = server.log;
 server.get("/test", async (req, rep) => {
   rep.send("yo ben");

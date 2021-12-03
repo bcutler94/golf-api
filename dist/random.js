@@ -122,6 +122,7 @@ var login = async () => {
         }
       }
     });
+    console.log(res.data.token);
     return res.data.token;
   } catch (e) {
     logger.error(e);
@@ -133,7 +134,7 @@ var getUser = async (ghin) => {
     const token = await login();
     const res = await import_gaxios.default.request({
       method: "GET",
-      url: `/golfers.json?golfer_id=${ghin}&from_ghin=true`,
+      url: `/golfers.json?global_search=true&search=${ghin}&per_page=1&page=1`,
       headers: {
         Authorization: `Bearer ${token}`
       }

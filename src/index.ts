@@ -1,7 +1,7 @@
 import fastify, { FastifyError } from 'fastify';
 import userHander from './route-handlers/user-hander';
 import userSchema, { PostUserType } from './schemas/user-schema';
-import './mongo/database';
+import './data-layer/database';
 
 const server = fastify({ logger: { prettyPrint: true } });
 export const logger = server.log
