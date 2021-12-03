@@ -1,6 +1,8 @@
+import { WithId } from 'mongodb';
 import db from '../data-layer/database';
 
-interface UserModel {
+export interface UserModel {
+  userId: string
   ghin: string
   groupIds: Array<string>
   lastName: string
@@ -9,10 +11,22 @@ interface UserModel {
   currentHandicap: number
 }
 
-const createUser = (user: UserModel) => {
+export type UserModelObject = WithId<UserModel>
 
+const createUser = async (user: UserModel): Promise<UserModel> => {
+  const checkIfUserExists = await db.collection<UserModel>('users').findOne({ ghin: user.ghin });
+  if (checkIfUserExists) throw new Error ('User already exists!')
+  await db.collection('users').insertOne(user);
+  return user;
+}
+
+const getUser = async (userId: string): Promise<UserModel> => {
+  const user = await db.collection<UserModel>('users').findOne({ userId });
+  if (!user) throw new Error (`Cant find userId: [${userId}]`);
+  return user;
 }
 
 export default {
-  createUser
+  createUser,
+  getUser
 }

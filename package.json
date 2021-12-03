@@ -7,23 +7,26 @@
     "build": "node esbuild.config.js",
     "build:random": "node esbuild.random.js",
     "random": "npm run build:random && pm2 kill && pm2 start ./dist/random.js -i 1 && pm2 logs",
-    "start:1": "npm run build && pm2 kill && pm2 start ./dist/index.js -i 1 && pm2 monit",
+    "start:1": "npm run build && pm2 kill && pm2 start ./dist/index.js -i 1 && pm2 logs",
     "start:max": "npm run build && pm2 kill && pm2 start ./dist/index.js -i max && pm2 monit",
-    "start:dev": "nodemon --exec 'npm run start:1' --ignore ./dist"
+    "start:dev": "nodemon --exec 'npm run build && node ./dist/index.js' --ignore ./dist"
   },
   "author": "bcutler94",
   "license": "ISC",
   "dependencies": {
     "@sinclair/typebox": "^0.20.5",
     "fastify": "^3.22.1",
+    "fastify-jwt": "^4.1.0",
     "gaxios": "^4.3.2",
     "mongodb": "^4.2.0",
     "mongoose": "^6.0.13",
-    "pino-pretty": "^7.2.0"
+    "pino-pretty": "^7.2.0",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@types/mongodb": "^4.0.7",
     "@types/node": "^16.11.6",
+    "@types/uuid": "^8.3.3",
     "esbuild": "^0.14.0",
     "esbuild-node-externals": "^1.4.0",
     "nodemon": "^2.0.15",
