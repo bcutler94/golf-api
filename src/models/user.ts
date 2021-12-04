@@ -15,7 +15,7 @@ export type UserModelObject = WithId<UserModel>
 
 const createUser = async (user: UserModel): Promise<UserModel> => {
   const checkIfUserExists = await db.collection<UserModel>('users').findOne({ ghin: user.ghin });
-  if (checkIfUserExists) throw new Error ('User already exists!')
+  if (checkIfUserExists) return user;
   await db.collection('users').insertOne(user);
   return user;
 }

@@ -83,6 +83,8 @@ var getUser = async (ghin) => {
         Authorization: `Bearer ${token}`
       }
     });
+    if (!Number.isFinite(hi_value))
+      throw new Error("There was an error looking up your GHIN Number.");
     return {
       ghin,
       first_name,
@@ -119,12 +121,19 @@ var database_default = client.db("golf");
 var createUser = async (user) => {
   const checkIfUserExists = await database_default.collection("users").findOne({ ghin: user.ghin });
   if (checkIfUserExists)
-    throw new Error("User already exists!");
+    return user;
   await database_default.collection("users").insertOne(user);
   return user;
 };
+var getUser2 = async (userId) => {
+  const user = await database_default.collection("users").findOne({ userId });
+  if (!user)
+    throw new Error(`Cant find userId: [${userId}]`);
+  return user;
+};
 var user_default = {
-  createUser
+  createUser,
+  getUser: getUser2
 };
 
 // src/route-handlers/user-hander.ts
@@ -134,8 +143,12 @@ var createUser2 = async (params) => {
   const { last_name: lastName, first_name: firstName, club_name: clubName, hi_value: currentHandicap } = await ghin_api_default.getUser(ghin);
   return await user_default.createUser({ userId: (0, import_uuid.v4)(), ghin, lastName, clubName, firstName, currentHandicap, groupIds });
 };
+var getUser3 = async (userId) => {
+  return await user_default.getUser(userId);
+};
 var user_hander_default = {
-  createUser: createUser2
+  createUser: createUser2,
+  getUser: getUser3
 };
 
 // src/schemas/user-schema.ts
@@ -168,14 +181,29 @@ var res = import_typebox.Type.Union([
   ]),
   errorSchema
 ]);
+var getUserReply = import_typebox.Type.Object({
+  userId: import_typebox.Type.String(),
+  ghin: import_typebox.Type.String(),
+  groupIds: import_typebox.Type.Array(import_typebox.Type.String()),
+  lastName: import_typebox.Type.String(),
+  firstName: import_typebox.Type.String(),
+  clubName: import_typebox.Type.String(),
+  currentHandicap: import_typebox.Type.Number()
+});
 var post = {
   body: postUserBody,
   response: {
     200: res
   }
 };
+var get = {
+  response: {
+    200: res
+  }
+};
 var user_schema_default = {
-  post
+  post,
+  get
 };
 
 // src/index.ts
@@ -212,6 +240,7 @@ server.route({
       const token = server.jwt.sign({ userId: user.userId });
       rep.send(__spreadProps(__spreadValues({}, user), { success: true, token }));
     } catch (e) {
+      logger.error(e);
       rep.send({ success: false, errorMessage: e instanceof Error ? e.message : "An error occurred" });
     }
   }
@@ -219,12 +248,14 @@ server.route({
 server.route({
   method: "GET",
   url: "/user",
+  schema: user_schema_default.get,
   preValidation: [middleware_default.verifyUser],
   handler: async (req, rep) => {
     try {
-      logger.info(req.user.userId);
-      rep.send({ yo: true });
+      const user = await user_hander_default.getUser(req.user.userId);
+      rep.send(__spreadProps(__spreadValues({}, user), { success: true }));
     } catch (e) {
+      logger.error(e);
       rep.send({ success: false, errorMessage: e instanceof Error ? e.message : "An error occurred" });
     }
   }

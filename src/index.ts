@@ -1,6 +1,6 @@
 import fastify from 'fastify';
 import userHander from './route-handlers/user-hander';
-import userSchema, { PostUser } from './schemas/user-schema';
+import userSchema, { GetUser, PostUser } from './schemas/user-schema';
 import './data-layer/database';
 import jwt from 'fastify-jwt';
 import middleware from './route-handlers/middleware';
@@ -25,24 +25,26 @@ server.route<PostUser>({
     try {
       const { body } = req;
       const user = await userHander.createUser(body);
-      const token = server.jwt.sign({ userId: user.userId })
+      const token = server.jwt.sign({ userId: user.userId });
       rep.send({ ...user, success: true, token });
     } catch (e) {
+      logger.error(e)
       rep.send({ success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' })
     }
   }
 });
 
-server.route({
+server.route<GetUser>({
   method: 'GET',
   url: '/user',
+  schema: userSchema.get,
   preValidation: [middleware.verifyUser],
   handler: async (req, rep) => {
     try {
-      // @ts-ignore
-      logger.info(req.user.userId)
-      rep.send({ yo: true })
+      const user = await userHander.getUser(req.user.userId)
+      rep.send({ ...user, success: true });
     } catch (e) {
+      logger.error(e)
       rep.send({ success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' })
     }
   }

@@ -49,6 +49,18 @@ const res = Type.Union([
   errorSchema
 ])
 
+const getUserReply = Type.Object({
+  userId: Type.String(),
+  ghin: Type.String(),
+  groupIds: Type.Array(Type.String()),
+  lastName: Type.String(),
+  firstName: Type.String(),
+  clubName: Type.String(),
+  currentHandicap: Type.Number(),
+});
+
+type GetUserReply = Static<typeof getUserReply>;
+
 const post = {
   body: postUserBody,
   response: {
@@ -56,6 +68,17 @@ const post = {
   },
 }
 
+export interface GetUser {
+  Reply: GetUserReply & SuccessReply | ErrorReply
+}
+
+const get = {
+  response: {
+    200: res,
+  },
+}
+
 export default {
   post,
+  get
 }

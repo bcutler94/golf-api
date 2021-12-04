@@ -63,6 +63,8 @@ const getUser = async (ghin: string): Promise<GetUserResponse> => {
       }
     });
 
+    if (!Number.isFinite(hi_value)) throw new Error ('There was an error looking up your GHIN Number.')
+
     return { 
       ghin,
       first_name, 

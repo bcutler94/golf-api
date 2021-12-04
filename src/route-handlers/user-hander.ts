@@ -9,6 +9,11 @@ const createUser = async (params: PostUser['Body']): Promise<UserModel> => {
   return await userModel.createUser({ userId: v4(), ghin, lastName, clubName, firstName, currentHandicap, groupIds });
 }
 
+const getUser = async (userId: string): Promise<UserModel> => {
+  return await userModel.getUser(userId)
+}
+
 export default {
-  createUser
+  createUser,
+  getUser
 }
