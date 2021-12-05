@@ -9,6 +9,8 @@ export interface UserModel {
   firstName: string
   clubName: string
   currentHandicap: number
+  pushToken?: string
+  phoneNumber: string
 }
 
 export type UserModelObject = WithId<UserModel>

@@ -55,7 +55,7 @@ interface PostUserResponse {
   currentHandicap: number
   token: string
 }
-interface POSTUserRoute {
+export interface POSTUserRoute {
   Body: PostUserBody
   Reply: APIResponse<PostUserResponse>
 }
