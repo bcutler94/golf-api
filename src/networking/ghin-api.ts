@@ -31,6 +31,7 @@ const login = async (): Promise<string> => {
         }
       }
     });
+    logger.info('got GHIN token', token)
     return token;
   } catch (e) {
     logger.error('there was an error logging into GHIN API', e)
@@ -38,12 +39,15 @@ const login = async (): Promise<string> => {
   }
 }
 
-interface GetUserResponse {
+interface GHINGolfer {
   ghin: string
   first_name: string
   last_name: string
   hi_value: number
   club_name: string
+}
+interface GetUserResponse {
+  golfers: Array<GHINGolfer>
 }
 
 /**
@@ -51,11 +55,11 @@ interface GetUserResponse {
  * @param ghin 
  * @returns 
  */
-const getUser = async (ghin: string): Promise<GetUserResponse> => {
+const getUser = async (ghin: string): Promise<GHINGolfer> => {
   try {
     const token = await login();
 
-    const { data: { first_name, last_name, hi_value, club_name } } = await ghinGaxios.request<GetUserResponse>({
+    const { data: { golfers: [ { first_name, last_name, hi_value, club_name } ] } } = await ghinGaxios.request<GetUserResponse>({
       method: 'GET',
       url: `/golfers.json?global_search=true&search=${ghin}&per_page=1&page=1`,
       headers: {
