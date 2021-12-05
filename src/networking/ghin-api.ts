@@ -1,5 +1,5 @@
 import ghinGaxios from 'gaxios';
-import { logger } from '..';
+import logger from '../util/logger';
 
 const GHIN_URL = 'https://api.ghin.com/api/v1';
 const GHIN_EMAIL = 'bcutler94@gmail.com';
@@ -33,7 +33,7 @@ const login = async (): Promise<string> => {
     });
     return token;
   } catch (e) {
-    logger.error(e)
+    logger.error('there was an error logging into GHIN API', e)
     throw e
   }
 }
@@ -73,7 +73,7 @@ const getUser = async (ghin: string): Promise<GetUserResponse> => {
       club_name 
     }
   } catch (e) {
-    logger.error(e)
+    logger.error('there was an error getting user from GHIN API', e)
     throw e
   }
 }

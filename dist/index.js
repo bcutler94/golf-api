@@ -22,11 +22,6 @@ var __spreadValues = (a, b) => {
 };
 var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 var __markAsModule = (target) => __defProp(target, "__esModule", { value: true });
-var __export = (target, all) => {
-  __markAsModule(target);
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
 var __reExport = (target, module2, desc) => {
   if (module2 && typeof module2 === "object" || typeof module2 === "function") {
     for (let key of __getOwnPropNames(module2))
@@ -40,13 +35,31 @@ var __toModule = (module2) => {
 };
 
 // src/index.ts
-__export(exports, {
-  logger: () => logger
-});
+var import_throng = __toModule(require("throng"));
+
+// src/server.ts
 var import_fastify = __toModule(require("fastify"));
 
 // src/networking/ghin-api.ts
 var import_gaxios = __toModule(require("gaxios"));
+
+// src/util/logger.ts
+var import_bunyan = __toModule(require("bunyan"));
+var logger_default = import_bunyan.default.createLogger({
+  name: "golf-api",
+  serializers: {
+    req: ([req, rep]) => {
+      return {
+        method: req.method,
+        url: req.url,
+        replyTime: rep.getResponseTime(),
+        headers: req.headers
+      };
+    }
+  }
+});
+
+// src/networking/ghin-api.ts
 var GHIN_URL = "https://api.ghin.com/api/v1";
 var GHIN_EMAIL = "bcutler94@gmail.com";
 var GHIN_PASSWORD = "Liverpool13";
@@ -69,7 +82,7 @@ var login = async () => {
     });
     return token;
   } catch (e) {
-    logger.error(e);
+    logger_default.error("there was an error logging into GHIN API", e);
     throw e;
   }
 };
@@ -93,7 +106,7 @@ var getUser = async (ghin) => {
       club_name
     };
   } catch (e) {
-    logger.error(e);
+    logger_default.error("there was an error getting user from GHIN API", e);
     throw e;
   }
 };
@@ -108,9 +121,9 @@ var client = new import_mongodb.MongoClient(uri);
 async function run() {
   try {
     await client.connect();
-    logger.info("connected to db");
+    logger_default.info("connected to db");
   } catch (e) {
-    logger.error("failed to connect to db", e);
+    logger_default.error("failed to connect to db", e);
     await client.close();
   }
 }
@@ -206,7 +219,7 @@ var user_schema_default = {
   get
 };
 
-// src/index.ts
+// src/server.ts
 var import_fastify_jwt = __toModule(require("fastify-jwt"));
 
 // src/route-handlers/middleware.ts
@@ -222,10 +235,14 @@ var middleware_default = {
   verifyUser
 };
 
-// src/index.ts
-var server = (0, import_fastify.default)({ logger: { prettyPrint: true } });
+// src/server.ts
+var server = (0, import_fastify.default)();
+server.addHook("onResponse", (request, reply, done) => {
+  logger_default.info({
+    req: [request, reply]
+  });
+});
 server.register(import_fastify_jwt.default, { secret: "theMostSecretKeyOfAllFuckingTime" });
-var logger = server.log;
 server.get("/test", async (req, rep) => {
   rep.send("yo ben");
 });
@@ -240,7 +257,7 @@ server.route({
       const token = server.jwt.sign({ userId: user.userId });
       rep.send(__spreadProps(__spreadValues({}, user), { success: true, token }));
     } catch (e) {
-      logger.error(e);
+      logger_default.error("error POST /user", e);
       rep.send({ success: false, errorMessage: e instanceof Error ? e.message : "An error occurred" });
     }
   }
@@ -255,19 +272,21 @@ server.route({
       const user = await user_hander_default.getUser(req.user.userId);
       rep.send(__spreadProps(__spreadValues({}, user), { success: true }));
     } catch (e) {
-      logger.error(e);
+      logger_default.error("error GET /user", e);
       rep.send({ success: false, errorMessage: e instanceof Error ? e.message : "An error occurred" });
     }
   }
 });
-server.listen(8080, (err, address) => {
-  if (err) {
-    console.error(err);
-    process.exit(1);
-  }
-  console.log(`Server listening at ${address}`);
-});
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
-  logger
-});
+var start = () => {
+  server.listen(8080, (err, address) => {
+    if (err) {
+      logger_default.error(err);
+      process.exit(1);
+    }
+    logger_default.info(`Server listening at ${address}`);
+  });
+};
+var server_default = start;
+
+// src/index.ts
+(0, import_throng.default)(server_default);

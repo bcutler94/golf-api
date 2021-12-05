@@ -1,5 +1,5 @@
 import { MongoClient } from "mongodb";
-import { logger } from "..";
+import logger from "../util/logger";
 
 // Replace the uri string with your MongoDB deployment's connection string.
 const uri = 'mongodb://127.0.0.1:27017';
