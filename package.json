@@ -7,7 +7,8 @@
     "build": "node esbuild.config.js",
     "build:random": "node esbuild.random.js",
     "random": "npm run build:random && node ./dist/random.js",
-    "start:dev": "nodemon --exec 'npm run build && node ./dist/index.js' --ignore ./dist -e ts | bunyan"
+    "start:dev": "nodemon --exec 'npm run build && node ./dist/index.js' --ignore ./dist -e ts | bunyan",
+    "start": "node esbuild.config.js && node ./dist/index.js| bunyan"
   },
   "author": "bcutler94",
   "license": "ISC",
