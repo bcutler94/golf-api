@@ -56,7 +56,7 @@ server.route<GetUser>({
 
 
 const start = () => {
-  server.listen(8080, (err, address) => {
+  server.listen(process.env.PORT || 8080, (err, address) => {
     if (err) {
       logger.error(err)
       process.exit(1)
