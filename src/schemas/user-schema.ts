@@ -5,11 +5,13 @@ const post: RouteShorthandOptions = {
     body: {
       ghin: { 
         type: 'string',
-        length: 7
+        maxLength: 7,
+        minLength: 7
       },
       phoneNumber: {
         type: 'string',
-        length: 10
+        maxLength: 10,
+        minLength: 10
       },
       pushToken: {
         type: 'string',

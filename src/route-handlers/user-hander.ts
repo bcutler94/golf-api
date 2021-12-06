@@ -1,5 +1,5 @@
 import ghinApi from "../networking/ghin-api";
-import userModel, { UserModel } from "../models/user";
+import userModel, { UserModel } from "../models/user-model";
 import { v4 } from 'uuid';
 import { POSTUserRoute } from "../server";
 
