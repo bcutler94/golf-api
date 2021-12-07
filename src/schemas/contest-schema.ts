@@ -1,37 +1,51 @@
 import { RouteShorthandOptions } from "fastify"
-import { SUPPORTED_CONTEST_TYPES } from "../models/contest-model"
-import helpers from "../util/helpers"
+import { CONTEST_STATUSES, CONTEST_TYPES, PARTICIPANTS_TYPE, RESULT_TYPES, SCORING_TYPE } from "../models/contest-model"
 
-// type: 'matchup'
-// status: ContestStatuses
-// contestId: string
-// teeTime: string
-// courseId: string
-// scorecardIds: Array<string>
-// results: Results[T]
-
-// interface MatchPlayResults {
-//   winningScorecardId: string
-//   holesPlayed: number
-//   score: string // '2 up' | 'AS' | '1 down'
-// }
-
+const MAX_CONTEST_PARTICIPANTS = 1000
 
 const post: RouteShorthandOptions = {
   schema: {
     body: {
-      contestType: {
+      adminId: {
         type: 'string',
-        maxLength: 20,
-        pattern: helpers.arrayToRegex([ ...SUPPORTED_CONTEST_TYPES ])
+        format: 'uuid'
+      },
+      contestType: {
+        enum: [ ...CONTEST_TYPES ]
+      },
+      scoringType: {
+        enum: [ ...SCORING_TYPE ]
+      },
+      status: {
+        enum: [ ...CONTEST_STATUSES ]
+      },
+      teeTime: {
+        type: 'string',
+        format: 'date-time'
       },
       courseId: {
         type: 'string',
         format: 'uuid'
       },
-      teeTime: {
+      resultType: {
+        enum: [ ...RESULT_TYPES ]
+      },
+      participantType: {
+        enum: [ ...PARTICIPANTS_TYPE ]
+      },
+      participantIds: {
+        type: "array",
+        maxItems: MAX_CONTEST_PARTICIPANTS,
+        uniqueItems: true,
+        items: {
+          type:  'string',
+          format: 'uuid'
+        }
+      },
+      parentContestId: {
         type: 'string',
-        format: 'date-time'
+        nullable: true,
+        format: 'uuid'
       }
     },
   }

@@ -13,17 +13,19 @@ export interface UserModel {
   phoneNumber: string
 }
 
-export type UserModelObject = WithId<UserModel>
+export type UserModelObject = WithId<UserModel>;
+
+const getUserCollection = () => db.collection<UserModel>('users');
 
 const createUser = async (user: UserModel): Promise<UserModel> => {
-  const checkIfUserExists = await db.collection<UserModel>('users').findOne({ ghin: user.ghin });
+  const checkIfUserExists = await getUserCollection().findOne({ ghin: user.ghin });
   if (checkIfUserExists) return user;
-  await db.collection('users').insertOne(user);
+  await db.collection<UserModel>('users').insertOne(user);
   return user;
 }
 
 const getUser = async (userId: string): Promise<UserModel> => {
-  const user = await db.collection<UserModel>('users').findOne({ userId });
+  const user = await getUserCollection().findOne({ userId });
   if (!user) throw new Error (`Cant find userId: [${userId}]`);
   return user;
 }

@@ -1,11 +1,11 @@
 import { WithId } from 'mongodb';
 import db from '../data-layer/database';
 
-export const SUPPORTED_CONTEST_TYPES = [
+export const CONTEST_TYPES = [
   'matchup'
 ] as const;
 
-export const SUPPORTED_RESULT_TYPES = [
+export const RESULT_TYPES = [
   'match-play'
 ] as const;
 
@@ -15,33 +15,25 @@ export const CONTEST_STATUSES = [
   'closed'
 ] as const;
 
-const SCORING_TYPE = [
+export const SCORING_TYPE = [
   'gross',
   'net'
 ] as const;
 
-type ScoringTypes = typeof SCORING_TYPE[number]
+export const PARTICIPANTS_TYPE = [
+  'individual',
+  'team'
+] as const;
 
-type ContestStatuses = typeof CONTEST_STATUSES[number]
+export type ParticipantTypes = typeof PARTICIPANTS_TYPE[number]
 
-type ContestTypes = typeof SUPPORTED_CONTEST_TYPES[number]
+export type ScoringTypes = typeof SCORING_TYPE[number]
 
-type ContestResults = typeof SUPPORTED_RESULT_TYPES[number]
+export type ContestStatuses = typeof CONTEST_STATUSES[number]
 
-interface MatchupContest<T extends ContestResults> {
-  contestType: ContestTypes
-  scoringType: ScoringTypes
-  status: ContestStatuses
-  contestId: string
-  teeTime: string
-  courseId: string
-  scorecardIds: Array<string>
-  results: Results[T]
-}
+export type ContestTypes = typeof CONTEST_TYPES[number]
 
-interface Contests<T extends ContestResults> {
-  'matchup': MatchupContest<T>
-}
+export type ResultTypes = typeof RESULT_TYPES[number]
 
 interface MatchPlayResults {
   resultType: 'match-play'
@@ -54,23 +46,46 @@ interface Results {
   'match-play': MatchPlayResults
 }
 
-export interface ContestModel<T extends ContestTypes, R extends ContestResults> {
-  type: T
-  data: Contests<R>[T]
+interface Individual {
+  participantType: 'individual'
+  playerIds: Array<string>
 }
 
-export type ContestModelObject<T extends ContestTypes, R extends ContestResults> = WithId<ContestModel<T, R>>
-
-const createContest = async (contest): Promise<ContestModel> => {
-
+interface Team {
+  participantType: 'team'
+  teamIds: Array<string>
 }
 
-const updateContest = async (update): Promise<ContestModel> => {
-
+interface Participants {
+  'individual': Individual
+  'team': Team
 }
+
+interface ContestModel<R extends ResultTypes, P extends ParticipantTypes> {
+  adminId: string
+  contestType: ContestTypes // do i need this?
+  scoringType: ScoringTypes
+  status: ContestStatuses
+  contestId: string
+  teeTime: string
+  courseId: string
+  scorecardIds: Array<string>
+  results: Results[R]
+  participants: Participants[P]
+  parentContestId: string | null
+}
+
+
+export type ContestModelObject<R extends ResultTypes, P extends ParticipantTypes> = WithId<ContestModel<R, P>>
+
+const getContestCollection = <R extends ResultTypes, P extends ParticipantTypes>() => db.collection<ContestModel<R, P>>('contests');
+
+const createContest = async <R extends ResultTypes, P extends ParticipantTypes>(contest: ContestModel<R, P>) => {
+  return await getContestCollection<R, P>().insertOne(contest);
+}
+
 
 
 export default {
   createContest,
-  updateContest
 }
