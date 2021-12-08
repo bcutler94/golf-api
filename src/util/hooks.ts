@@ -7,6 +7,7 @@ const hooks: FastifyPluginCallback = (server, opts, done) => {
     logger.info({
       req: [request, reply],
     })
+    done()
   })
 
   done()

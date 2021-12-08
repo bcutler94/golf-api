@@ -1,7 +1,7 @@
 import ghinApi from "../networking/ghin-api";
 import userModel, { UserModel } from "../models/user-model";
 import { v4 } from 'uuid';
-import { POSTUserRoute } from "../server";
+import { POSTUserRoute } from "../routers/user-router";
 
 const createUser = async (params: POSTUserRoute['Body']): Promise<UserModel> => {
   const { ghin, groupIds, pushToken, phoneNumber } = params;

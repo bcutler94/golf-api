@@ -1,4 +1,4 @@
-import fastify, { DoneFuncWithErrOrRes, FastifyInstance, FastifyPluginAsync, FastifyPluginCallback, FastifyRegisterOptions } from "fastify";
+import { FastifyPluginCallback } from "fastify";
 import middleware from "../route-handlers/middleware";
 import userHander from "../route-handlers/user-hander";
 import userSchema from "../schemas/user-schema";
