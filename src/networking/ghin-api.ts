@@ -31,7 +31,6 @@ const login = async (): Promise<string> => {
         }
       }
     });
-    logger.info('got GHIN token', token)
     return token;
   } catch (e) {
     logger.error('there was an error logging into GHIN API', e)
@@ -82,6 +81,104 @@ const getUser = async (ghin: string): Promise<GHINGolfer> => {
   }
 }
 
+export interface GHINCourse {
+    CourseID:	number
+    CourseStatus:	string
+    CourseName:	string
+    GeoLocationLatitude:	number
+    GeoLocationLongitude:	number
+    FacilityID:	number
+    FacilityStatus:	string
+    FacilityName:	string
+    FullName:	string
+    Address1:	string
+    Address2:	string
+    City:	string
+    State:	string
+    Zip:	string
+    Country:	string
+    EntCountryCode:	number
+    EntStateCode:	number
+    LegacyCRPCourseId:	number
+    Telephone:	string
+    Email:	string
+    UpdatedOn:	string
+}
+
+interface GetCoursesResponse {
+  courses: Array<GHINCourse>
+}
+
+const getCourses = async (state: string): Promise<Array<GHINCourse>> => {
+  try {
+    const token = await login();
+    const { data: { courses } } = await ghinGaxios.request<GetCoursesResponse>({
+      method: 'GET',
+      url: `/courses/search.json?country=USA&state=US-${state.toUpperCase()}`,
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return courses
+  } catch (e) {
+    logger.error('there was an error getting user from GHIN API', e)
+    throw e
+  }
+}
+
+export interface GHINHole {
+  Number:	number
+  HoleId:	number
+  Length:	number
+  Par:	number
+  Allocation:	number
+}
+
+export interface GetCourseInfoResponse {
+  Season: {
+    SeasonName: string
+    SeasonStartDate: string
+    SeasonEndDate: string
+    IsAllYear: boolean
+  }
+  TeeSets: Array<{
+    Ratings: Array<{
+      RatingType:	string
+      CourseRating:	number
+      SlopeRating:	number
+    }>
+    Holes: Array<GHINHole>
+    TeeSetRatingId:	number
+    TeeSetRatingName:	string
+    Gender:	string
+    HolesNumber:	number
+    TotalYardage:	number
+    TotalMeters:	number
+    LegacyCRPTeeId:	number
+    StrokeAllocation:	boolean
+    TotalPar:	number
+  }>
+}
+
+const getCourseInfo = async (courseId: string): Promise<GetCourseInfoResponse> => {
+  try {
+    const token = await login();
+    const { data } = await ghinGaxios.request<GetCourseInfoResponse>({
+      method: 'GET',
+      url: `/courses/${courseId}.json`,
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return data
+  } catch (e) {
+    logger.error('there was an error getting user from GHIN API', e)
+    throw e
+  }
+}
+
 export default {
-  getUser
+  getUser,
+  getCourses,
+  getCourseInfo
 }

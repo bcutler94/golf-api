@@ -56,6 +56,7 @@ const userRouter: FastifyPluginCallback = (server, opts, done) => {
     handler: async (req, rep) => {
       try {
         const user = await userHander.getUser(req.user.userId)
+        logger.info('got user', user.userId)
         rep.send({ ...user, success: true });
       } catch (e) {
         logger.error('error GET /user', e)

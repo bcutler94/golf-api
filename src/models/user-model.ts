@@ -2,7 +2,7 @@ import { WithId } from 'mongodb';
 import db from '../data-layer/database';
 
 export interface UserModel {
-  userId: string
+  id: string
   ghin: string
   groupIds: Array<string>
   lastName: string

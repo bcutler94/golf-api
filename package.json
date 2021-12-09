@@ -6,13 +6,15 @@
   "scripts": {
     "build": "node esbuild.config.js",
     "build:random": "node esbuild.random.js",
-    "random": "npm run build:random && node ./dist/random.js",
+    "random": "npm run build:random && node ./dist/random.js | bunyan",
     "start:dev": "nodemon --exec 'npm run build && node ./dist/index.js' --ignore ./dist -e ts | bunyan",
-    "start": "npm ci && node esbuild.config.js && node ./dist/index.js| bunyan"
+    "start": "npm ci && node esbuild.config.js && node ./dist/index.js | bunyan",
+    "benchmark": "autocannon http://127.0.0.1:8080/v1/user -d 30 -w 10 --headers Authorization='Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI1Y2Q1NzM0ZC05ZDNhLTQwZmItODhlNS03OTIzMzgwMzQwYWIiLCJpYXQiOjE2Mzg5Nzk2NjZ9.KTZzb7mszv1ki_8AONkAwy8gvjS60_zcn_DT7Ro24ak'"
   },
   "author": "bcutler94",
   "license": "ISC",
   "dependencies": {
+    "autocannon": "^7.5.0",
     "bunyan": "^1.8.15",
     "esbuild": "^0.14.2",
     "esbuild-node-externals": "^1.4.0",
