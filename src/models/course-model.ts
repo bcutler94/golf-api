@@ -57,6 +57,8 @@ const addIndexes = async () => {
   }
 }
 
+addIndexes()
+
 
 const createCourse = async (course: CourseModel): Promise<CourseModel> => {
   const { ok } = await getCourseCollection.findOneAndUpdate({ externalId: course.externalId }, { $set: course }, { upsert: true });
@@ -66,6 +68,5 @@ const createCourse = async (course: CourseModel): Promise<CourseModel> => {
 
 
 export default {
-  addIndexes,
   createCourse
 }
