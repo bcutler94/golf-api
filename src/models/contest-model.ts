@@ -80,17 +80,22 @@ export interface ContestModel<R extends ResultTypes, P extends ParticipantTypes>
 
 export type ContestModelObject<R extends ResultTypes, P extends ParticipantTypes> = WithId<ContestModel<R, P>>
 
-const contestCollection = database.db.collection<ContestModel<ResultTypes, ParticipantTypes>>('contests');
+const getContestCollection = async () => {
+  const db = await database.getGolfDB()
+  return db.collection<ContestModel<ResultTypes, ParticipantTypes>>('contests');
+}
 
 
 const createContest = async (contest: ContestModel<ResultTypes, ParticipantTypes>): Promise<ContestModel<ResultTypes, ParticipantTypes>> => {
-  const { acknowledged } = await contestCollection.insertOne(contest);
+  const collection = await getContestCollection();
+  const { acknowledged } = await collection.insertOne(contest);
   if (acknowledged) return contest;
   throw new Error ('There was an error creating the contest [model]');
 }
 
 const getContest = async (contestId: string): Promise<ContestModelObject<ResultTypes, ParticipantTypes>> => {
-  const contest = await contestCollection.findOne({ contestId });
+  const collection = await getContestCollection();
+  const contest = await collection.findOne({ contestId });
   if (!contest) throw new Error ('There was an error getting the contest [model]')
   return contest;
 }
