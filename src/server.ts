@@ -6,6 +6,7 @@ import userRouter from './routers/user-router';
 import contestRouter from './routers/contest-router';
 import hooks from './util/hooks';
 import database from './data-layer/database';
+import courseRouter from './routers/course-router';
 
 interface SuccessResponse {
   success: true
@@ -22,7 +23,13 @@ const server = fastify();
 /**
  * Register hooks/middleware
  */
-server.register(hooks)
+// server.register(hooks)
+server.addHook('onResponse', (request, reply, done) => {
+  logger.info({
+    req: [request, reply],
+  })
+  done()
+})
 server.register(jwt, { secret: process.env.JWT_SECRET || 'theMostSecretKeyOfAllFuckingTime' });
 
 /**
@@ -39,6 +46,11 @@ server.register(userRouter, { prefix: 'v1' })
  * Contest Router
  */
 server.register(contestRouter, { prefix: 'v1' })
+
+/**
+ * Courses Router
+ */
+server.register(courseRouter, { prefix: 'v1' })
 
 
 const start = async () => {

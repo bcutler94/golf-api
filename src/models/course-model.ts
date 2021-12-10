@@ -1,4 +1,4 @@
-import { Db, WithId } from 'mongodb';
+import { AggregationCursor, Db, WithId } from 'mongodb';
 import database from '../data-layer/database';
 import logger from '../util/logger';
 
@@ -55,7 +55,7 @@ const getCourseCollection = async () => {
 const addIndexes = async () => {
   try {
     const collection = await getCourseCollection()
-    const result = await collection.createIndex({ fullName: "text" }, { default_language: "english" });
+    const result = await collection.createIndex({ fullName: 1 });
     logger.info('created index', result)
   } catch (e) {
     logger.error(`error adding index to course model`, e)
@@ -72,7 +72,21 @@ const createCourse = async (course: CourseModel): Promise<CourseModel> => {
   throw new Error ('There was an error saving course Info ')
 }
 
+const searchCourse = async (searchTerm: string): Promise<AggregationCursor<CourseModel>> => {
+  const collection = await getCourseCollection();
+  const courses = await collection.aggregate<CourseModel>([
+    { 
+      $match: {
+        fullName: {
+          $regex: searchTerm, $options: 'i'
+        }
+      }
+    }
+  ])
+  return courses;
+}
 
 export default {
-  createCourse
+  createCourse,
+  searchCourse
 }
