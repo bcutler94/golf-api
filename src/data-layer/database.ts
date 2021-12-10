@@ -11,7 +11,6 @@ const connect = async (): Promise<MongoClient> => {
   const client = new MongoClient(uri);
   try {
     await client.connect();
-    logger.info('connected to db')
     return client
   } catch (e) {
     logger.error('failed to connect to db', e)
@@ -25,7 +24,9 @@ const GOLF_DB = process.env.GOLF_DB || 'golf-db';
 const getGolfDB = async (): Promise<Db> => {
   if (db) return db;
   const client = await connect()
-  return client.db(GOLF_DB);
+  logger.info('connected to db')
+  db = client.db(GOLF_DB);
+  return db
 }
 
 const startDB = async () => {
