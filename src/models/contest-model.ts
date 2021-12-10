@@ -1,4 +1,5 @@
 import { WithId } from 'mongodb';
+import database from '../data-layer/database';
 import db from '../data-layer/database';
 
 export const CONTEST_TYPES = [
@@ -79,7 +80,7 @@ export interface ContestModel<R extends ResultTypes, P extends ParticipantTypes>
 
 export type ContestModelObject<R extends ResultTypes, P extends ParticipantTypes> = WithId<ContestModel<R, P>>
 
-const contestCollection = db.collection<ContestModel<ResultTypes, ParticipantTypes>>('contests');
+const contestCollection = database.db.collection<ContestModel<ResultTypes, ParticipantTypes>>('contests');
 
 
 const createContest = async (contest: ContestModel<ResultTypes, ParticipantTypes>): Promise<ContestModel<ResultTypes, ParticipantTypes>> => {

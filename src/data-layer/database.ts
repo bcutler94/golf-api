@@ -17,17 +17,11 @@ const connect = async () => {
   }
 }
 
-const addAllIndexes = async () => {
-  return Promise.all([
-    courseModel.addIndexes()
-  ])
-}
-
 const startDB = async () => {
   await connect();
-  await addAllIndexes()
 }
 
-startDB();
-
-export default client.db('golf-db');
+export default {
+  startDB,
+  db: client.db('golf-db')
+}

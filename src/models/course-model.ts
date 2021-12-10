@@ -1,4 +1,5 @@
 import { WithId } from 'mongodb';
+import database from '../data-layer/database';
 import db from '../data-layer/database';
 import logger from '../util/logger';
 // interface GetCourseInfoResponse {
@@ -77,7 +78,7 @@ export interface CourseModel {
 
 export type CourseModelObject = WithId<CourseModel>;
 
-const getCourseCollection = db.collection<CourseModel>('courses');
+const getCourseCollection = database.db.collection<CourseModel>('courses');
 
 const addIndexes = async () => {
   try {
@@ -88,6 +89,7 @@ const addIndexes = async () => {
   }
 }
 
+addIndexes()
 
 const createCourse = async (course: CourseModel): Promise<CourseModel> => {
   const { acknowledged } = await getCourseCollection.insertOne(course);
@@ -106,6 +108,5 @@ const createCourse = async (course: CourseModel): Promise<CourseModel> => {
 // }
 
 export default {
-  addIndexes,
   createCourse
 }
