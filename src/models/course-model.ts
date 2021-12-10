@@ -92,20 +92,11 @@ const addIndexes = async () => {
 addIndexes()
 
 const createCourse = async (course: CourseModel): Promise<CourseModel> => {
-  const { acknowledged } = await getCourseCollection.insertOne(course);
-  if (acknowledged) return course;
+  const { ok } = await getCourseCollection.findOneAndUpdate({ externalId: course.externalId }, { $set: course }, { upsert: true });
+  if (ok) return course;
   throw new Error ('There was an error saving course Info ')
 }
 
-// const 
-
-// const searchCourse = async (searchTerm: string): Promise<Array<CourseModel>> => {
-//   await getCourseCollection.aggregate([
-//     {
-//       $search
-//     }
-//   ])
-// }
 
 export default {
   createCourse
