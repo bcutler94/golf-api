@@ -1,5 +1,6 @@
 import { WithId } from 'mongodb';
 import db from '../data-layer/database';
+import logger from '../util/logger';
 // interface GetCourseInfoResponse {
 //   Season: {
 //     SeasonName: string
@@ -78,12 +79,23 @@ export type CourseModelObject = WithId<CourseModel>;
 
 const getCourseCollection = db.collection<CourseModel>('courses');
 
+const addIndexes = async () => {
+  try {
+    const result = await getCourseCollection.createIndex({ fullName: "text" }, { default_language: "english" });
+    logger.info('created index', result)
+  } catch (e) {
+    logger.error(`error adding index to course model`, e)
+  }
+}
+
+addIndexes()
+
+
 const createCourse = async (course: CourseModel): Promise<CourseModel> => {
   const { acknowledged } = await getCourseCollection.insertOne(course);
   if (acknowledged) return course;
   throw new Error ('There was an error saving course Info ')
 }
-
 
 export default {
   createCourse

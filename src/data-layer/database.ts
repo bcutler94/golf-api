@@ -15,6 +15,7 @@ async function run() {
     await client.close();
   }
 }
-run().catch(console.dir);
+run()
+  .catch(e => logger.error('there was an error connecting to DB', e));
 
 export default client.db('golf-db');
