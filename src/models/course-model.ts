@@ -88,8 +88,6 @@ const addIndexes = async () => {
   }
 }
 
-addIndexes()
-
 
 const createCourse = async (course: CourseModel): Promise<CourseModel> => {
   const { acknowledged } = await getCourseCollection.insertOne(course);
@@ -97,6 +95,17 @@ const createCourse = async (course: CourseModel): Promise<CourseModel> => {
   throw new Error ('There was an error saving course Info ')
 }
 
+// const 
+
+// const searchCourse = async (searchTerm: string): Promise<Array<CourseModel>> => {
+//   await getCourseCollection.aggregate([
+//     {
+//       $search
+//     }
+//   ])
+// }
+
 export default {
+  addIndexes,
   createCourse
 }
