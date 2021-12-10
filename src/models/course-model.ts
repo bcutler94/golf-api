@@ -1,38 +1,6 @@
-import { WithId } from 'mongodb';
+import { Db, WithId } from 'mongodb';
 import database from '../data-layer/database';
-import db from '../data-layer/database';
 import logger from '../util/logger';
-// interface GetCourseInfoResponse {
-//   Season: {
-//     SeasonName: string
-//     SeasonStartDate: string
-//     SeasonEndDate: string
-//     IsAllYear: string
-//   }
-//   TeeSets: Array<{
-//     Ratings: Array<{
-//       RatingType:	string
-//       CourseRating:	number
-//       SlopeRating:	number
-//     }>
-//     Holes: Array<{
-//       Number:	number
-//       HoleId:	number
-//       Length:	number
-//       Par:	number
-//       Allocation:	number
-//     }>
-//     TeeSetRatingId:	number
-//     TeeSetRatingName:	string
-//     Gender:	string
-//     HolesNumber:	number
-//     TotalYardage:	number
-//     TotalMeters:	number
-//     LegacyCRPTeeId:	number
-//     StrokeAllocation:	boolean
-//     TotalPar:	number
-//   }>
-// }
 
 export interface HoleInfo {
   number: number
@@ -89,7 +57,6 @@ const addIndexes = async () => {
   }
 }
 
-addIndexes()
 
 const createCourse = async (course: CourseModel): Promise<CourseModel> => {
   const { ok } = await getCourseCollection.findOneAndUpdate({ externalId: course.externalId }, { $set: course }, { upsert: true });
@@ -99,5 +66,6 @@ const createCourse = async (course: CourseModel): Promise<CourseModel> => {
 
 
 export default {
+  addIndexes,
   createCourse
 }

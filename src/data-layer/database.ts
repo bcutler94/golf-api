@@ -1,4 +1,4 @@
-import { MongoClient } from "mongodb";
+import { Db, MongoClient } from "mongodb";
 import courseModel from "../models/course-model";
 import logger from "../util/logger";
 
@@ -6,6 +6,7 @@ import logger from "../util/logger";
 const uri = process.env.DATABASE_URL || 'mongodb://127.0.0.1:27017';
 
 const client = new MongoClient(uri);
+let db = client.db('golf-db');
 
 const connect = async () => { 
   try {
@@ -18,10 +19,10 @@ const connect = async () => {
 }
 
 const startDB = async () => {
-  await connect();
+  return await connect();
 }
 
 export default {
   startDB,
-  db: client.db('golf-db')
+  db
 }

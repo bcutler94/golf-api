@@ -73,10 +73,10 @@ const run = async () => {
       try {
         const courseInfo = await ghinApi.getCourseInfo(course.CourseID.toString())
         await courseModel.createCourse(toCourseModel(course, courseInfo))
-        logger.info(`succesfully persisted course ${course.CourseID} ${course.CourseName}`)
+        // logger.info(`succesfully persisted course ${course.CourseID} ${course.CourseName}`)
         successCount++
       } catch (e) {
-        logger.error(`failed to persist course ${course.CourseID} ${course.CourseName}`)
+        // logger.error(`failed to persist course ${course.CourseID} ${course.CourseName}`)
         errorCount++
       }
     }

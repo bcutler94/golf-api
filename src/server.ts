@@ -43,6 +43,7 @@ server.register(contestRouter, { prefix: 'v1' })
 
 const start = async () => {
   await database.startDB();
+  
   server.listen(process.env.PORT || 8080, process.env.HOST || '127.0.0.1', (err, address) => {
     if (err) {
       logger.error(err)
