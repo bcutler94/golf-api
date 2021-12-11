@@ -5,7 +5,7 @@ const getQueryStringRequiredKeys = [ 'search' ];
 
 const get: RouteShorthandOptions = {
   schema: {
-    // headers: genericSchema.headerAuth,
+    headers: genericSchema.headerAuth,
     querystring: {
       type: 'object',
       maxProperties: getQueryStringRequiredKeys.length,

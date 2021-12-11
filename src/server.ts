@@ -30,6 +30,7 @@ server.addHook('onResponse', (request, reply, done) => {
   })
   done()
 })
+server.register(require('fastify-compress'))
 server.register(jwt, { secret: process.env.JWT_SECRET || 'theMostSecretKeyOfAllFuckingTime' });
 
 /**

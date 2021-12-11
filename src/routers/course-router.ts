@@ -24,7 +24,7 @@ const courseRouter: FastifyPluginCallback = (server, opts, done) => {
   server.route<GETCoursesRoute>({
     method: 'GET',
     url: '/courses',
-    // preValidation: [middleware.verifyUser],
+    preValidation: [middleware.verifyUser],
     schema: courseSchema.get.schema,
     handler: async (req, rep) => {
       try {
