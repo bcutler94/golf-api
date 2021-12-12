@@ -7,7 +7,7 @@ const createUser = async (params: POSTUserRoute['Body']): Promise<UserModel> => 
   const { ghin, groupIds, pushToken, phoneNumber } = params;
   const { last_name: lastName, first_name: firstName, club_name: clubName, hi_value: currentHandicap } = await ghinApi.getUser(ghin);
   return await userModel.createUser({
-    userId: v4(), 
+    id: v4(), 
     ghin, 
     lastName, 
     clubName, 

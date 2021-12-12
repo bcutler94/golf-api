@@ -36,14 +36,15 @@ const getParticipants = (participantType: ParticipantTypes, participantIds: Arra
 
 const createContest = async (contest: POSTContestRoute['Body']): Promise<ContestModel<ResultTypes, ParticipantTypes>> => {
 
-  const { adminId, contestType, scoringType, teeTime, courseId, resultType, participantType, participantIds, payoutId } = contest
+  const { adminId, contestType, scoringType, teeTime, courseId, resultType, participantType, participantIds, payoutId, name } = contest
 
   return await contestModel.createContest({
     adminId,
+    name,
     contestType,
     scoringType,
     status: 'queued',
-    contestId: v4(),
+    id: v4(),
     teeTime,
     courseId,
     scorecardIds: [],

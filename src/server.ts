@@ -8,8 +8,9 @@ import hooks from './util/hooks';
 import database from './data-layer/database';
 import courseRouter from './routers/course-router';
 
-interface SuccessResponse {
+interface SuccessResponse<JSON> {
   success: true
+  data: JSON
 }
 
 interface ErrorResponse {
@@ -17,7 +18,7 @@ interface ErrorResponse {
   errorMessage: string
 }
 
-export type APIResponse<Success> = Success & SuccessResponse | ErrorResponse
+export type APIResponse<JSON> = SuccessResponse<JSON> | ErrorResponse
 
 const server = fastify();
 /**

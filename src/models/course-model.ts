@@ -1,6 +1,25 @@
-import { AggregationCursor, Db, WithId } from 'mongodb';
+import { AggregationCursor, Db, WithId, Document } from 'mongodb';
 import database from '../data-layer/database';
 import logger from '../util/logger';
+import { DeepPick } from "ts-deep-pick";
+
+
+export const COURSE_VIEWS = [
+  'search'
+] as const;
+
+export type CourseViewTypes = typeof COURSE_VIEWS[number];
+
+export interface CourseSearchView {
+  id: string
+  fullName: string
+  city: string
+  state: string
+}
+
+export interface CourseViews {
+  'search': CourseSearchView
+}
 
 export interface HoleInfo {
   number: number
@@ -72,9 +91,12 @@ const createCourse = async (course: CourseModel): Promise<CourseModel> => {
   throw new Error ('There was an error saving course Info ')
 }
 
-const searchCourse = async (searchTerm: string): Promise<AggregationCursor<CourseModel>> => {
+
+const searchCourse = async <T extends CourseViewTypes>(searchTerm: string, viewType: T): Promise<AggregationCursor<CourseViews[T]>> => {
+
   const collection = await getCourseCollection();
-  const courses = await collection.aggregate<CourseModel>([
+
+  const pipeline: Array<Document> = [
     { 
       $match: {
         fullName: {
@@ -82,7 +104,27 @@ const searchCourse = async (searchTerm: string): Promise<AggregationCursor<Cours
         }
       }
     }
-  ])
+  ]
+
+  switch (viewType) {
+    case 'search':
+      pipeline.push({
+        $project: {
+          _id: 0,
+          id: 1,
+          fullName: 1,
+          city: '$location.city',
+          state: '$location.state'
+        }
+      })
+      break;
+  }
+
+  pipeline.push({
+    $limit: 10
+  })
+
+  const courses = await collection.aggregate<CourseViews[T]>(pipeline)
   return courses;
 }
 

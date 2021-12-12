@@ -1,25 +1,25 @@
 import { FastifyPluginCallback } from "fastify";
-import { ContestStatuses, ContestTypes, ParticipantTypes, ResultTypes, ScoringTypes } from "../models/contest-model";
-import courseModel from "../models/course-model";
-import contestHandler from "../route-handlers/contest-handler";
+import { CourseViews, CourseViewTypes } from "../models/course-model";
 import courseHandler from "../route-handlers/course-handler";
 import middleware from "../route-handlers/middleware";
-import contestSchema from "../schemas/contest-schema";
 import courseSchema from "../schemas/course-schema";
+import { APIResponse } from "../server";
 import logger from "../util/logger";
 
 /**
- * POST
+ * GET
  */
 
+type GetCourseResponse = Array<CourseViews[CourseViewTypes]>
+interface GETCoursesRoute {
+  Querystring: {
+    search: string
+    view: CourseViewTypes
+  }
+  Reply: APIResponse<GetCourseResponse>
+}
 
 const courseRouter: FastifyPluginCallback = (server, opts, done) => {
-
-  interface GETCoursesRoute {
-    Querystring: {
-      search: string
-    }
-  }
 
   server.route<GETCoursesRoute>({
     method: 'GET',
@@ -28,9 +28,9 @@ const courseRouter: FastifyPluginCallback = (server, opts, done) => {
     schema: courseSchema.get.schema,
     handler: async (req, rep) => {
       try {
-        const { query: { search } } = req;
-        const courses = await courseHandler.getCourse(search)
-        rep.send({ courses, success: true })
+        const { query: { search, view } } = req;
+        const courses = await courseHandler.getCourse(search, view)
+        rep.send({ success: true, data: courses })
       } catch (e) {
         logger.error('error GET /courses', e)
         rep.send({ success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' })

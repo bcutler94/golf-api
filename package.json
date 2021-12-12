@@ -35,6 +35,7 @@
     "@types/throng": "^5.0.3",
     "@types/uuid": "^8.3.3",
     "nodemon": "^2.0.15",
+    "ts-deep-pick": "^0.2.2",
     "typescript": "^4.4.4"
   }
 }

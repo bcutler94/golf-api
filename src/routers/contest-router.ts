@@ -10,6 +10,7 @@ import logger from "../util/logger";
  */
 interface PostContestBody {
   adminId: string
+  name: string
   contestType: ContestTypes
   scoringType: ScoringTypes
   teeTime: string
@@ -65,7 +66,7 @@ const contestRouter: FastifyPluginCallback = (server, opts, done) => {
       try {
         const { params: { contestId } } = req;
         const contest = await contestHandler.getContest(contestId);
-        rep.send({ ...contest, success: true })
+        rep.send({ success: true, data: contest })
       } catch (e) {
         logger.error('error POST /contest', e)
         rep.send({ success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' })

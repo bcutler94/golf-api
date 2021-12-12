@@ -4,7 +4,7 @@ import genericSchema from "./generic-schema"
 
 const MAX_CONTEST_PARTICIPANTS = 1000
 
-const postBodyRequiredKeys = ['adminId', 'contestType', 'scoringType', 'teeTime', 'courseId', 'resultType', 'participantType', 'participantIds', 'parentContestId', 'payoutId'];
+const postBodyRequiredKeys = ['name', 'adminId', 'contestType', 'scoringType', 'teeTime', 'courseId', 'resultType', 'participantType', 'participantIds', 'parentContestId', 'payoutId'];
 const post: RouteShorthandOptions = {
   schema: {
     headers: genericSchema.headerAuth,
@@ -13,6 +13,10 @@ const post: RouteShorthandOptions = {
       maxProperties: postBodyRequiredKeys.length,
       required: postBodyRequiredKeys,
       properties: {
+        name: {
+          type: 'string',
+          maxLength: 15
+        },
         adminId: {
           type: 'string',
           format: 'uuid'

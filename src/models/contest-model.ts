@@ -64,6 +64,7 @@ export interface Participants {
 
 export interface ContestModel<R extends ResultTypes, P extends ParticipantTypes> {
   id: string
+  name: string
   adminId: string
   contestType: ContestTypes // do i need this?
   scoringType: ScoringTypes

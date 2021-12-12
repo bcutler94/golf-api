@@ -1,7 +1,7 @@
-import courseModel, { CourseModel } from "../models/course-model"
+import courseModel, {  CourseViews, CourseViewTypes } from "../models/course-model"
 
-const getCourse = async (searchTerm: string): Promise<Array<CourseModel>> => {
-  const cursor = await courseModel.searchCourse(searchTerm);
+const getCourse = async <T extends CourseViewTypes>(searchTerm: string, view: CourseViewTypes): Promise<Array<CourseViews[T]>> => {
+  const cursor = await courseModel.searchCourse(searchTerm, view);
   return cursor.toArray()
 }
 

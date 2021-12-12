@@ -12,7 +12,7 @@ const scriptToRun = async () => {
   await database.startDB()
   // insert here below here
   // await persistCourses.run()
-  const docs = await courseModel.searchCourse('a');
+  const docs = await courseModel.searchCourse('a', 'search');
   await docs.forEach((doc) => logger.info(doc))
 }
 
