@@ -1,11 +1,8 @@
 import { FastifyPluginCallback } from "fastify"
 import logger from "./logger"
 
-const hooks: FastifyPluginCallback = (server, opts, done) => {
+const hooks: FastifyPluginCallback = async (server, opts) => {
 
-
-
-  done()
 }
 
 export default hooks;

@@ -9,7 +9,7 @@ const get: RouteShorthandOptions = {
     headers: genericSchema.headerAuth,
     querystring: {
       type: 'object',
-      maxProperties: getQueryStringRequiredKeys.length,
+      maxProperties: 25,
       required: getQueryStringRequiredKeys,
       properties: {
         search: { 

@@ -48,7 +48,7 @@ interface PostUserResponse {
     Reply: APIResponse<PostUserResponse>
   }
 
-const userRouter: FastifyPluginCallback = (server, opts, done) => {
+const userRouter: FastifyPluginCallback = async (server, opts, done) => {
 
   server.route<GETUserRoute>({
     method: 'GET',
@@ -83,7 +83,7 @@ const userRouter: FastifyPluginCallback = (server, opts, done) => {
     }
   });
 
-  done()
+  
 }
 
 

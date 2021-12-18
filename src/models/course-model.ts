@@ -1,8 +1,6 @@
 import { AggregationCursor, Db, WithId, Document } from 'mongodb';
 import database from '../data-layer/database';
 import logger from '../util/logger';
-import { DeepPick } from "ts-deep-pick";
-
 
 export const COURSE_VIEWS = [
   'search'

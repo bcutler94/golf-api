@@ -1,35 +1,34 @@
 import { RouteShorthandOptions } from "fastify"
-import { CONTEST_STATUSES, CONTEST_TYPES, PARTICIPANTS_TYPE, RESULT_TYPES, SCORING_TYPE } from "../models/contest-model"
+import { CONTEST_STATUSES, CONTEST_VIEW_TYPES, PARTICIPANTS_TYPE, RESULT_TYPES, SCORING_TYPE } from "../models/contest-model"
 import genericSchema from "./generic-schema"
 
 const MAX_CONTEST_PARTICIPANTS = 1000
 
-const postBodyRequiredKeys = ['name', 'adminId', 'contestType', 'scoringType', 'teeTime', 'courseId', 'resultType', 'participantType', 'participantIds', 'parentContestId', 'payoutId'];
+const postBodyRequiredKeys = ['name', 'scoringType', 'teeTime', 'courseId', 'resultType', 'participantType', 'participantIds', 'parentContestId', 'payoutId'];
 const post: RouteShorthandOptions = {
   schema: {
     headers: genericSchema.headerAuth,
     body: {
+      errorMessage: 'There was an error',
       type: 'object',
-      maxProperties: postBodyRequiredKeys.length,
       required: postBodyRequiredKeys,
+      maxProperties: 25,
       properties: {
         name: {
           type: 'string',
-          maxLength: 15
+          maxLength: 15,
+          minLength: 3
         },
         adminId: {
           type: 'string',
           format: 'uuid'
-        },
-        contestType: {
-          enum: [ ...CONTEST_TYPES ]
         },
         scoringType: {
           enum: [ ...SCORING_TYPE ]
         },
         teeTime: {
           type: 'string',
-          // format: 'string' TODO
+          nullable: true
         },
         courseId: {
           type: 'string',
@@ -72,7 +71,7 @@ const get: RouteShorthandOptions = {
     params: {
       type: 'object',
       required: getParamsRequiredKeys,
-      maxProperties: getParamsRequiredKeys.length,
+      maxProperties: 25,
       properties: {
         type: 'string',
         format: 'uuid'
@@ -81,7 +80,26 @@ const get: RouteShorthandOptions = {
   }
 }
 
+const getUserContestRequiredQPs = ['view']
+
+const getUserContests: RouteShorthandOptions = {
+  schema: {
+    headers: genericSchema.headerAuth,
+    querystring: {
+      type: 'object',
+      required: getUserContestRequiredQPs,
+      maxProperties: 25,
+      properties: {
+        view: {
+          enum: [ ...CONTEST_VIEW_TYPES ]
+        }
+      }
+    },
+  }
+}
+
 export default {
   post,
-  get
+  get,
+  getUserContests
 }

@@ -24,13 +24,16 @@ const server = fastify();
 /**
  * Register hooks/middleware
  */
-// server.register(hooks)
-server.addHook('onResponse', (request, reply, done) => {
-  logger.info({
-    req: [request, reply],
-  })
-  done()
+server.register(hooks)
+server.setErrorHandler((e, request, rep) => {
+  rep.status(200).send({ success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' })
 })
+// server.addHook('onResponse', (request, reply, done) => {
+//   logger.info({
+//     req: [request, reply],
+//   })
+//   done()
+// })
 server.register(require('fastify-compress'))
 server.register(jwt, { secret: process.env.JWT_SECRET || 'theMostSecretKeyOfAllFuckingTime' });
 

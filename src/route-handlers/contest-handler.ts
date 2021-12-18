@@ -1,5 +1,5 @@
 import { v4 } from "uuid"
-import contestModel, { ContestModel, ContestModelObject, ContestTypes, Individual, MatchPlayResults, Participants, ParticipantTypes, Results, ResultTypes, Team } from "../models/contest-model"
+import contestModel, { ContestModel, ContestModelObject, ContestViews, ContestViewTypes, Individual, MatchPlayResults, Participants, ParticipantTypes, Results, ResultTypes, Team } from "../models/contest-model"
 import { POSTContestRoute } from "../routers/contest-router"
 
 const getResults = (resultType: ResultTypes): Results[ResultTypes] => {
@@ -22,11 +22,13 @@ const getParticipants = (participantType: ParticipantTypes, participantIds: Arra
     case 'individual':
       return {
         participantType: 'individual',
-        playerIds: participantIds
+        homePlayerId: null,
+        userIds: participantIds
       }
     case 'team':
       return {
         participantType: 'team',
+        homeTeamId: null,
         teamIds: participantIds
       }
     default:
@@ -34,14 +36,13 @@ const getParticipants = (participantType: ParticipantTypes, participantIds: Arra
   }
 }
 
-const createContest = async (contest: POSTContestRoute['Body']): Promise<ContestModel<ResultTypes, ParticipantTypes>> => {
+const createContest = async (userId: string, contest: POSTContestRoute['Body']): Promise<string> => {
 
-  const { adminId, contestType, scoringType, teeTime, courseId, resultType, participantType, participantIds, payoutId, name } = contest
+  const { scoringType, teeTime, courseId, resultType, participantType, participantIds, payoutId, name } = contest
 
   return await contestModel.createContest({
-    adminId,
+    adminId: userId,
     name,
-    contestType,
     scoringType,
     status: 'queued',
     id: v4(),
@@ -59,7 +60,13 @@ const getContest = async (contestId: string): Promise<ContestModelObject<ResultT
   return await contestModel.getContest(contestId)
 }
 
+const getUserContests = async <T extends ContestViewTypes>(userId: string, view: T): Promise<ContestViews[T][]> => {
+  const cursor = await contestModel.getUserContests(userId, view);
+  return cursor.toArray()
+}
+
 export default {
   createContest,
-  getContest
+  getContest,
+  getUserContests
 }

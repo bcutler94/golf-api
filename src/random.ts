@@ -11,9 +11,7 @@ import persistCourses from "./workers/persist-courses";
 const scriptToRun = async () => {
   await database.startDB()
   // insert here below here
-  // await persistCourses.run()
-  const docs = await courseModel.searchCourse('a', 'search');
-  await docs.forEach((doc) => logger.info(doc))
+  await persistCourses.run();
 }
 
 console.time('random')

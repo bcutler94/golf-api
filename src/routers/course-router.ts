@@ -19,7 +19,7 @@ interface GETCoursesRoute {
   Reply: APIResponse<GetCourseResponse>
 }
 
-const courseRouter: FastifyPluginCallback = (server, opts, done) => {
+const courseRouter: FastifyPluginCallback = async (server) => {
 
   server.route<GETCoursesRoute>({
     method: 'GET',
@@ -38,7 +38,7 @@ const courseRouter: FastifyPluginCallback = (server, opts, done) => {
     }
   })
 
-  done()
+  // done()
 }
 
 export default courseRouter;
