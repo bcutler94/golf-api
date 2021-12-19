@@ -1,7 +1,7 @@
 import { FastifyPluginCallback } from "fastify";
 import { CourseViews, CourseViewTypes } from "../models/course-model";
 import courseHandler from "../route-handlers/course-handler";
-import middleware from "../route-handlers/middleware";
+import middleware from "../util/middleware";
 import courseSchema from "../schemas/course-schema";
 import { APIResponse } from "../server";
 import logger from "../util/logger";

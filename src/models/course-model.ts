@@ -64,7 +64,7 @@ export interface CourseModel {
 export type CourseModelObject = WithId<CourseModel>;
 
 
-const getCourseCollection = async () => {
+export const getCourseCollection = async () => {
   const db = await database.getGolfDB()
   return db.collection<CourseModel>('courses');
 }

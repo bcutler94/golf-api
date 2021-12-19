@@ -70,6 +70,8 @@ export interface ContestPreView {
   teeTime: string | null
   numParticipants: number
   courseName: string
+  city: string
+  state: string
 }
 
 export interface ContestViews {
@@ -99,7 +101,6 @@ const getContestCollection = async () => {
   const db = await database.getGolfDB()
   return db.collection<ContestModel<ResultTypes, ParticipantTypes>>('contests');
 }
-
 
 const createContest = async (contest: ContestModel<ResultTypes, ParticipantTypes>): Promise<string> => {
   const collection = await getContestCollection();
@@ -131,7 +132,16 @@ const getUserContests = async <T extends ContestViewTypes>(userId: string, view:
       $lookup: { from: 'courses', localField: 'courseId', foreignField: 'id', as: 'courses' }
     },
     {
-      $project: { _id: 0, id: 1, name: 1, status: 1, teeTime: 1, courseName: { $first: '$courses.fullName' }, numParticipants: { $cond: { if: { $isArray: "$teams.userIds" }, then: { $size: "$teams.userIds" }, else: '$players.playerIds' } } }
+      $project: { 
+        _id: 0, 
+        id: 1, 
+        name: 1, 
+        status: 1, 
+        teeTime: 1, 
+        courseName: { $first: '$courses.fullName' }, 
+        city: { $first: '$courses.location.city' },
+        state: { $first: '$courses.location.state' },
+        numParticipants: { $cond: { if: { $isArray: "$teams.userIds" }, then: { $size: "$teams.userIds" }, else: '$players.playerIds' } } }
     }
   ]
   return await collection.aggregate<ContestViews[T]>(pipeline);

@@ -14,7 +14,7 @@ const get: RouteShorthandOptions = {
       properties: {
         search: { 
           type: 'string',
-          maxLength: 25,
+          maxLength: 100,
         },
         view: {
           enum: [ ...COURSE_VIEWS ]

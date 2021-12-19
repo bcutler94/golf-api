@@ -16,7 +16,7 @@ const post: RouteShorthandOptions = {
       properties: {
         name: {
           type: 'string',
-          maxLength: 15,
+          maxLength: 25,
           minLength: 3
         },
         adminId: {

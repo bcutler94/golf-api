@@ -1,7 +1,7 @@
 import { FastifyPluginCallback } from "fastify";
 import { ContestModel, ContestViews, ContestViewTypes, ParticipantTypes, ResultTypes, ScoringTypes } from "../models/contest-model";
 import contestHandler from "../route-handlers/contest-handler";
-import middleware from "../route-handlers/middleware";
+import middleware from "../util/middleware";
 import contestSchema from "../schemas/contest-schema";
 import { APIResponse } from "../server";
 import logger from "../util/logger";
@@ -71,15 +71,12 @@ const contestRouter: FastifyPluginCallback = async (server) => {
     handler: async (req, rep) => {
       try {
         const { body, user: { userId } } = req;
-        // const contestId = await contestHandler.createContest(userId, body);
-        logger.info('POST /contest', userId)
-        return { data: { contestId: '' }, success: true }
-        // return rep.send({ data: { contestId }, success: true })
+        const contestId = await contestHandler.createContest(userId, body);
+        logger.info('success POST /contest', userId)
+        return { data: { contestId }, success: true }
       } catch (e) {
         logger.error('error POST /contest', e)
         return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
-
-        // rep.send({ success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' })
       }
     }
   });
