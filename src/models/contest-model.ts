@@ -50,7 +50,7 @@ export interface Results {
 export interface Individual {
   participantType: 'individual'
   homePlayerId: string | null
-  userIds: Array<string>
+  playerIds: Array<string>
 }
 export interface Team {
   participantType: 'team'
@@ -115,15 +115,6 @@ const getContest = async (contestId: string): Promise<ContestModelObject<ResultT
   return contest;
 }
 
-// export interface ContestPreView {
-//   id: string
-//   name: string
-//   status: ContestStatuses
-//   teeTime: string | null
-//   numParticipants: number
-//   courseName: string
-// }
-
 const getUserContests = async <T extends ContestViewTypes>(userId: string, view: T): Promise<AggregationCursor<ContestViews[T]>> => {
   const collection = await getContestCollection();
   const pipeline: Array<Document> = [
@@ -131,19 +122,18 @@ const getUserContests = async <T extends ContestViewTypes>(userId: string, view:
       $lookup: { from: 'teams', localField: 'participants.teamIds', foreignField: 'id', as: 'teams' }
     },
     {
-      $lookup: { from: 'users', localField: 'participants.userIds', foreignField: 'id', as: 'users' }
+      $lookup: { from: 'players', localField: 'participants.playerIds', foreignField: 'id', as: 'players' }
     },
     {
-      $match: { $or: [ { adminId: { $eq: userId } },  { $expr: { $in: [ userId, '$teams.userIds' ]  } }, { $expr: { $in: [ userId, '$users.userIds' ]  } } ] }
+      $match: { $or: [ { adminId: { $eq: userId } },  { $expr: { $in: [ userId, '$teams.userIds' ]  } }, { $expr: { $in: [ userId, '$players.playerIds' ]  } } ] }
     },
     {
       $lookup: { from: 'courses', localField: 'courseId', foreignField: 'id', as: 'courses' }
     },
     {
-      $project: { _id: 0, id: 1, name: 1, status: 1, teeTime: 1, courseName: { $first: '$courses.fullName' }, numParticipants: { $cond: { if: { $isArray: "$teams.userIds" }, then: { $size: "$teams.userIds" }, else: "$users.userIds" } } }
+      $project: { _id: 0, id: 1, name: 1, status: 1, teeTime: 1, courseName: { $first: '$courses.fullName' }, numParticipants: { $cond: { if: { $isArray: "$teams.userIds" }, then: { $size: "$teams.userIds" }, else: '$players.playerIds' } } }
     }
   ]
-
   return await collection.aggregate<ContestViews[T]>(pipeline);
 }
 
