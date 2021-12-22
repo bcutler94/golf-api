@@ -39,11 +39,37 @@ const login = async (): Promise<string> => {
 }
 
 interface GHINGolfer {
-  ghin: string
-  first_name: string
-  last_name: string
-  hi_value: number
-  club_name: string
+  first_name:	string
+  last_name:	string
+  gender:	string
+  email:	string
+  suffix:	string | null
+  prefix:	string | null
+  middle_name:	string | null
+  status:	string
+  ghin:	string
+  handicap_index:	string
+  association_id:	number
+  association_name:	string
+  club_name:	string
+  club_id:	number
+  state:	string | null
+  country:	string | null
+  low_hi:	string
+  soft_cap:	string
+  hard_cap:	string
+  entitlement:	boolean
+  club_affiliation_id:	number
+  is_home_club:	boolean
+  rev_date:	string | null
+  hi_value:	number
+  hi_display:	string
+  message_club_authorized:	string | null
+  low_hi_value:	number
+  low_hi_display:	string
+  low_hi_date:	string | null
+  nullable: true
+  has_digital_profile:	string
 }
 interface GetUserResponse {
   golfers: Array<GHINGolfer>
@@ -58,7 +84,7 @@ const getUser = async (ghin: string): Promise<GHINGolfer> => {
   try {
     const token = await login();
 
-    const { data: { golfers: [ { first_name, last_name, hi_value, club_name } ] } } = await ghinGaxios.request<GetUserResponse>({
+    const { data: { golfers: [ ghinGolfer ] } } = await ghinGaxios.request<GetUserResponse>({
       method: 'GET',
       url: `/golfers.json?global_search=true&search=${ghin}&per_page=1&page=1`,
       headers: {
@@ -66,15 +92,9 @@ const getUser = async (ghin: string): Promise<GHINGolfer> => {
       }
     });
 
-    if (!Number.isFinite(hi_value)) throw new Error ('There was an error looking up your GHIN Number.')
+    if (!Number.isFinite(ghinGolfer.hi_value)) throw new Error ('There was an error looking up your GHIN Number.')
 
-    return { 
-      ghin,
-      first_name, 
-      last_name,
-      hi_value, 
-      club_name 
-    }
+    return ghinGolfer
   } catch (e) {
     logger.error('there was an error getting user from GHIN API', e)
     throw e
@@ -176,9 +196,30 @@ const getCourseInfo = async (courseId: string): Promise<GetCourseInfoResponse> =
     throw e
   }
 }
+interface SearchPlayersResponse {
+  golfers: GHINGolfer[]
+}
+
+const searchPlayers = async (fullName: string): Promise<GHINGolfer[]> => {
+  try {
+    const token = await login();
+    const { data: { golfers } } = await ghinGaxios.request<SearchPlayersResponse>({
+      method: 'GET',
+      url: `/golfers.json?per_page=100&page=1&global_search=true&search=${fullName}`,
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return golfers;
+  } catch (e) {
+    logger.error('there was an error getting user from GHIN API', e)
+    throw e
+  }
+}
 
 export default {
   getUser,
   getCourses,
-  getCourseInfo
+  getCourseInfo,
+  searchPlayers
 }

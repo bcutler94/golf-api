@@ -11,14 +11,11 @@ import persistCourses from "./workers/persist-courses";
 const scriptToRun = async () => {
   await database.startDB()
   // insert here below here
-  console.time('1')
-  const collection = await getCourseCollection();
-  const cursor = await collection.find({});
-  await cursor.forEach(course => {
-    const { location: { state }, id } = course;
-    collection.findOneAndUpdate({ id }, { $set: { 'location.state': state.slice(3) }})
-  })
-  console.timeEnd('1')
+
+  const data = await ghinApi.searchPlayers('ben cutler')
+
+  console.log(data)
+
 }
 
 console.time('random')

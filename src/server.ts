@@ -7,6 +7,7 @@ import contestRouter from './routers/contest-router';
 import hooks from './util/hooks';
 import database from './data-layer/database';
 import courseRouter from './routers/course-router';
+import playerRouter from './routers/players-router';
 
 interface SuccessResponse<JSON> {
   success: true
@@ -50,6 +51,11 @@ server.register(contestRouter, { prefix: 'v1' })
  * Courses Router
  */
 server.register(courseRouter, { prefix: 'v1' })
+
+/**
+ * Player Route
+ */
+server.register(playerRouter, { prefix: 'v1' })
 
 
 const start = async () => {
