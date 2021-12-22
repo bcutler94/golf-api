@@ -38,7 +38,6 @@ const courseRouter: FastifyPluginCallback = async (server) => {
     }
   })
 
-  // done()
 }
 
 export default courseRouter;
