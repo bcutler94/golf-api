@@ -32,7 +32,6 @@ const scrapeGolfers = async () => {
         const input = toPlayerModal(g);
         await collection.findOneAndReplace({ externalId: input.externalId, lastName: input.lastName, clubName: input.clubName }, toPlayerModal(g), { upsert: true })
       }
-      await collection.insertMany(ghinGolfers.map(g => toPlayerModal(g)))
       i++
     }
     logger.info('done scrapping golfers for ', course.courseName)
