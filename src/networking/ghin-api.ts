@@ -240,7 +240,7 @@ const getClubGolfers = async (clubId: string, page: number): Promise<GHINGolfer[
     });
     return golfers;
   } catch (e) {
-    logger.warn('there was an error getting golfers from GHIN API', e)
+    logger.warn('there was an error getting golfers from GHIN API', clubId)
     return []
     // throw new Error ('There was an error searching for players, please try again later.')
   }
