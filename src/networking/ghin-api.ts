@@ -8,6 +8,11 @@ const GHIN_PASSWORD = 'Liverpool13'
 ghinGaxios.instance.defaults = {
   baseURL: GHIN_URL,
   retry: true,
+  retryConfig: {
+    retry: 5,
+    retryDelay: 500,
+    onRetryAttempt: () => logger.warn('there was an error retying')
+  },
   responseType: 'json'
 }
 
@@ -38,7 +43,7 @@ const login = async (): Promise<string> => {
   }
 }
 
-interface GHINGolfer {
+export interface GHINGolfer {
   first_name:	string
   last_name:	string
   gender:	string
@@ -70,6 +75,7 @@ interface GHINGolfer {
   low_hi_date:	string | null
   nullable: true
   has_digital_profile:	string
+  player_name: string | null
 }
 interface GetUserResponse {
   golfers: Array<GHINGolfer>
@@ -217,9 +223,32 @@ const searchPlayers = async (fullName: string): Promise<GHINGolfer[]> => {
   }
 }
 
+interface GetClubGolfersResponse {
+  golfers: GHINGolfer[]
+}
+
+const getClubGolfers = async (clubId: string, page: number): Promise<GHINGolfer[]> => {
+  try {
+    const token = await login();
+    const { data: { golfers } } = await ghinGaxios.request<GetClubGolfersResponse>({
+      method: 'GET',
+      url: `/clubs/${clubId}/golfers.json?per_page=100&page=${page}`,
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return golfers;
+  } catch (e) {
+    logger.warn('there was an error getting golfers from GHIN API', e)
+    return []
+    // throw new Error ('There was an error searching for players, please try again later.')
+  }
+}
+
 export default {
   getUser,
   getCourses,
   getCourseInfo,
-  searchPlayers
+  searchPlayers,
+  getClubGolfers
 }

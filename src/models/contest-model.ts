@@ -2,6 +2,12 @@ import { WithId, Document, AggregationCursor } from 'mongodb';
 import database from '../data-layer/database';
 import { ContestPlayer } from '../routers/contest-router';
 
+export const CONTEST_TYPES = [
+  'parent',
+  'child',
+  'single'
+] as const;
+
 export const CONTEST_VIEW_TYPES = [
   'preview'
 ] as const;
@@ -27,6 +33,8 @@ export const PARTICIPANTS_TYPE = [
   'team'
 ] as const;
 
+export type ContestTypes = typeof CONTEST_TYPES[number]
+
 export type ParticipantTypes = typeof PARTICIPANTS_TYPE[number]
 
 export type ScoringTypes = typeof SCORING_TYPE[number]
@@ -37,35 +45,9 @@ export type ContestViewTypes = typeof CONTEST_VIEW_TYPES[number]
 
 export type ResultTypes = typeof RESULT_TYPES[number]
 
-// export interface MatchPlayResults {
-//   resultType: 'match-play'
-//   winningScorecardId: string
-//   holesPlayed: number
-//   score: string // '2 up' | 'AS' | '1 down'
-// }
-
-// export interface Results {
-//   'match-play': MatchPlayResults
-// }
-
-// export interface Individual {
-//   participantType: 'individual'
-//   homePlayerId: string | null
-//   playerIds: Array<string>
-// }
-// export interface Team {
-//   participantType: 'team'
-//   homeTeamId: string | null
-//   teamIds: Array<string>
-// }
-
-// export interface Participants {
-//   'individual': Individual
-//   'team': Team
-// }
-
 export interface ContestPreView {
   id: string
+  type: ContestTypes
   name: string
   status: ContestStatuses
   teeTime: string | null
@@ -166,7 +148,14 @@ const getUserContests = async <T extends ContestViewTypes>(userId: string, view:
       $lookup: { from: 'players', localField: 'participants.playerIds', foreignField: 'id', as: 'players' }
     },
     {
-      $match: { $or: [ { adminId: { $eq: userId } },  { $expr: { $in: [ userId, '$teams.userIds' ]  } }, { $expr: { $in: [ userId, '$players.playerIds' ]  } } ] }
+      $match: { 
+        type: { $in: [ 'parent', 'single' ] },
+        $or: [ 
+          { adminId: { $eq: userId } }, 
+          { $expr: { $in: [ userId, '$teams.userIds' ] } }, 
+          { $expr: { $in: [ userId, '$players.playerIds' ] } } 
+        ] 
+      }
     },
     {
       $lookup: { from: 'courses', localField: 'courseId', foreignField: 'id', as: 'courses' }
@@ -178,14 +167,15 @@ const getUserContests = async <T extends ContestViewTypes>(userId: string, view:
       pipeline.push({
         $project: { 
           _id: 0, 
+          type: 1,
           id: 1, 
           name: 1, 
           status: 1, 
-          teeTime: 1, 
           courseName: { $first: '$courses.fullName' }, 
           city: { $first: '$courses.location.city' },
           state: { $first: '$courses.location.state' },
-          numParticipants: { $cond: { if: { $isArray: "$teams.userIds" }, then: { $size: "$teams.userIds" }, else: '$players.playerIds' } } }
+          // numParticipants: { $size: '$participants' }
+        }
       });
       break;
     default:

@@ -3,9 +3,11 @@ import database from '../data-layer/database';
 
 export interface PlayerModel {
   id: string
-  captainId: string
-  name: string
-  userIds: string[]
+  firstName: string
+  lastName: string
+  clubName: string
+  fullName: string
+  currentHandicap: number
 }
 
 export type TeamModelObject = WithId<PlayerModel>;
@@ -16,4 +18,5 @@ const getPlayerCollection = async () => {
 }
 
 export default {
+  getPlayerCollection
 }

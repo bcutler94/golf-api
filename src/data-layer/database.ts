@@ -1,5 +1,4 @@
 import { Db, MongoClient } from "mongodb";
-import courseModel from "../models/course-model";
 import logger from "../util/logger";
 
 // Replace the uri string with your MongoDB deployment's connection string.
