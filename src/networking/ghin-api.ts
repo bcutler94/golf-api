@@ -44,6 +44,7 @@ const login = async (): Promise<string> => {
 }
 
 export interface GHINGolfer {
+  id: number | null
   first_name:	string
   last_name:	string
   gender:	string

@@ -3,6 +3,7 @@ import database from '../data-layer/database';
 
 export interface PlayerModel {
   id: string
+  externalId: number | null
   firstName: string
   lastName: string
   clubName: string

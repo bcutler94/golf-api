@@ -12,7 +12,8 @@ const toPlayerModal = (ghinGolfer: GHINGolfer): PlayerModel => {
     lastName: ghinGolfer.last_name,
     fullName: ghinGolfer.player_name || `${ghinGolfer.first_name} ${ghinGolfer.last_name}`,
     clubName: ghinGolfer.club_name,
-    currentHandicap: ghinGolfer.hi_value
+    currentHandicap: ghinGolfer.hi_value,
+    externalId: ghinGolfer.id || null
   }
 }
 
@@ -27,6 +28,10 @@ const scrapeGolfers = async () => {
       const ghinGolfers = await ghinApi.getClubGolfers(course.externalId, i);
       if (!ghinGolfers.length) break;
       const collection = await playerModel.getPlayerCollection();
+      for (const g of ghinGolfers) {
+        const input = toPlayerModal(g);
+        await collection.findOneAndReplace({ externalId: input.externalId, lastName: input.lastName, clubName: input.clubName }, toPlayerModal(g), { upsert: true })
+      }
       await collection.insertMany(ghinGolfers.map(g => toPlayerModal(g)))
       i++
     }
