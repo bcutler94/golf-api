@@ -5,25 +5,32 @@ import middleware from "../util/middleware";
 import contestSchema from "../schemas/contest-schema";
 import { APIResponse } from "../server";
 import logger from "../util/logger";
+import { CourseSearchView } from "../models/course-model";
 
 /**
  * POST contest
  */
-interface PostContestBody {
-  name: string
-  scoringType: ScoringTypes
-  teeTime: string | null
-  courseId: string
-  resultType: ResultTypes
-  participantType: ParticipantTypes
-  participantIds: Array<string>
-  payoutId: string | null
-  parentContestId: string | null
+export interface ContestPlayer {
+  firstName: string
+  lastName: string
+  club: string
+  ghin: string
 }
 
-interface PostContestReply {
-  contestId: string
+ export interface Contest {
+  numMatches: number
+  name: string
+  course: CourseSearchView
+  participants: ContestPlayer[]
+  participantType: ParticipantTypes
+  resultType: ResultTypes
+  scoringType: ScoringTypes
 }
+export interface PostContestBody {
+  contests: Contest[]
+}
+
+interface PostContestReply {}
 
 export interface POSTContestRoute {
   Body: PostContestBody
@@ -38,7 +45,7 @@ export interface POSTContestRoute {
 }
 
 interface GetContestReply {
-  contest: ContestModel<ResultTypes, ParticipantTypes>
+  contest: ContestModel
 }
 interface GETContestRoute {
   Params: GetContestParams,
@@ -67,13 +74,14 @@ const contestRouter: FastifyPluginCallback = async (server) => {
     method: 'POST',
     url: '/contest',
     preValidation: [middleware.verifyUser],
-    schema: contestSchema.post.schema,
+    schema: contestSchema.postContests.schema,
     handler: async (req, rep) => {
       try {
-        const { body, user: { userId } } = req;
-        const contestId = await contestHandler.createContest(userId, body);
+        const { body: { contests }, user: { userId } } = req;
+        logger.info(contests, req.body)
+        await contestHandler.createContests(userId, contests);
         logger.info('success POST /contest', userId)
-        return { data: { contestId }, success: true }
+        return { data: {}, success: true }
       } catch (e) {
         logger.error('error POST /contest', e)
         return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
@@ -114,9 +122,6 @@ const contestRouter: FastifyPluginCallback = async (server) => {
     }
   })
 
-
-
-  // done()
 }
 
 export default contestRouter;

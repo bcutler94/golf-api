@@ -1,5 +1,6 @@
 import { WithId, Document, AggregationCursor } from 'mongodb';
 import database from '../data-layer/database';
+import { ContestPlayer } from '../routers/contest-router';
 
 export const CONTEST_VIEW_TYPES = [
   'preview'
@@ -36,32 +37,32 @@ export type ContestViewTypes = typeof CONTEST_VIEW_TYPES[number]
 
 export type ResultTypes = typeof RESULT_TYPES[number]
 
-export interface MatchPlayResults {
-  resultType: 'match-play'
-  winningScorecardId: string
-  holesPlayed: number
-  score: string // '2 up' | 'AS' | '1 down'
-}
+// export interface MatchPlayResults {
+//   resultType: 'match-play'
+//   winningScorecardId: string
+//   holesPlayed: number
+//   score: string // '2 up' | 'AS' | '1 down'
+// }
 
-export interface Results {
-  'match-play': MatchPlayResults
-}
+// export interface Results {
+//   'match-play': MatchPlayResults
+// }
 
-export interface Individual {
-  participantType: 'individual'
-  homePlayerId: string | null
-  playerIds: Array<string>
-}
-export interface Team {
-  participantType: 'team'
-  homeTeamId: string | null
-  teamIds: Array<string>
-}
+// export interface Individual {
+//   participantType: 'individual'
+//   homePlayerId: string | null
+//   playerIds: Array<string>
+// }
+// export interface Team {
+//   participantType: 'team'
+//   homeTeamId: string | null
+//   teamIds: Array<string>
+// }
 
-export interface Participants {
-  'individual': Individual
-  'team': Team
-}
+// export interface Participants {
+//   'individual': Individual
+//   'team': Team
+// }
 
 export interface ContestPreView {
   id: string
@@ -78,34 +79,73 @@ export interface ContestViews {
   'preview': ContestPreView
 }
 
-export interface ContestModel<R extends ResultTypes, P extends ParticipantTypes> {
+// export interface ContestModel<R extends ResultTypes, P extends ParticipantTypes> {
+//   id: string
+//   name: string
+//   adminId: string
+//   // contestType: ContestTypes // do i need this?
+//   scoringType: ScoringTypes
+//   status: ContestStatuses
+//   teeTime: string | null
+//   courseId: string
+//   scorecardIds: Array<string>
+//   results: Results[R]
+//   participants: Participants[P]
+//   parentContestId: string | null
+//   payoutId: string | null
+// }
+
+export interface ParentContest {
+  type: 'parent'
   id: string
-  name: string
   adminId: string
-  // contestType: ContestTypes // do i need this?
-  scoringType: ScoringTypes
+  name: string
+  childContestIds: string[]
   status: ContestStatuses
-  teeTime: string | null
-  courseId: string
-  scorecardIds: Array<string>
-  results: Results[R]
-  participants: Participants[P]
-  parentContestId: string | null
-  payoutId: string | null
+  participantType: ParticipantTypes
+  leaderboardId: null | string
+  participants: ContestPlayer[]
 }
 
+export interface ChildContest {
+  type: 'child'
+  id: string
+  adminId: string
+  name: string
+  parentContestId: string
+  status: ContestStatuses
+  participantType: ParticipantTypes
+  resultType: ResultTypes
+  scoringType: ScoringTypes
+  leaderboardId: null | string
+}
 
-export type ContestModelObject<R extends ResultTypes, P extends ParticipantTypes> = WithId<ContestModel<R, P>>
+export interface SingleContest {
+  type: 'single'
+  id: string
+  adminId: string
+  name: string
+  status: ContestStatuses
+  participantType: ParticipantTypes
+  resultType: ResultTypes
+  scoringType: ScoringTypes
+  leaderboardId: null | string
+}
+
+export type ContestModel = ParentContest | ChildContest | SingleContest
+
+
+export type ContestModelObject<R extends ResultTypes, P extends ParticipantTypes> = WithId<ContestModel>
 
 const getContestCollection = async () => {
   const db = await database.getGolfDB()
-  return db.collection<ContestModel<ResultTypes, ParticipantTypes>>('contests');
+  return db.collection<ContestModel>('contests');
 }
 
-const createContest = async (contest: ContestModel<ResultTypes, ParticipantTypes>): Promise<string> => {
+const createContests = async (contests: ContestModel[]): Promise<void> => {
   const collection = await getContestCollection();
-  const { acknowledged } = await collection.insertOne(contest);
-  if (acknowledged) return contest.id;
+  const { acknowledged } = await collection.insertMany(contests);
+  if (acknowledged) return;
   throw new Error ('There was an error creating the contest [model]');
 }
 
@@ -130,26 +170,34 @@ const getUserContests = async <T extends ContestViewTypes>(userId: string, view:
     },
     {
       $lookup: { from: 'courses', localField: 'courseId', foreignField: 'id', as: 'courses' }
-    },
-    {
-      $project: { 
-        _id: 0, 
-        id: 1, 
-        name: 1, 
-        status: 1, 
-        teeTime: 1, 
-        courseName: { $first: '$courses.fullName' }, 
-        city: { $first: '$courses.location.city' },
-        state: { $first: '$courses.location.state' },
-        numParticipants: { $cond: { if: { $isArray: "$teams.userIds" }, then: { $size: "$teams.userIds" }, else: '$players.playerIds' } } }
     }
   ]
+
+  switch (view) {
+    case 'preview':
+      pipeline.push({
+        $project: { 
+          _id: 0, 
+          id: 1, 
+          name: 1, 
+          status: 1, 
+          teeTime: 1, 
+          courseName: { $first: '$courses.fullName' }, 
+          city: { $first: '$courses.location.city' },
+          state: { $first: '$courses.location.state' },
+          numParticipants: { $cond: { if: { $isArray: "$teams.userIds" }, then: { $size: "$teams.userIds" }, else: '$players.playerIds' } } }
+      });
+      break;
+    default:
+      throw new Error ('Something really odd happened looking up contests.')
+  }
+
   return await collection.aggregate<ContestViews[T]>(pipeline);
 }
 
 
 export default {
-  createContest,
+  createContests,
   getContest,
   getUserContests
 }

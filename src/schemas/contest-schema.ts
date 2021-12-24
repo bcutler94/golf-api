@@ -1,66 +1,95 @@
 import { RouteShorthandOptions } from "fastify"
-import { CONTEST_STATUSES, CONTEST_VIEW_TYPES, PARTICIPANTS_TYPE, RESULT_TYPES, SCORING_TYPE } from "../models/contest-model"
+import { CONTEST_VIEW_TYPES, PARTICIPANTS_TYPE, RESULT_TYPES, SCORING_TYPE } from "../models/contest-model"
 import genericSchema from "./generic-schema"
 
 const MAX_CONTEST_PARTICIPANTS = 1000
+const MAX_CONTESTS = 10;
+const MAX_STRING_LENGTH = 100;
 
-const postBodyRequiredKeys = ['name', 'scoringType', 'teeTime', 'courseId', 'resultType', 'participantType', 'participantIds', 'parentContestId', 'payoutId'];
-const post: RouteShorthandOptions = {
+const postContests: RouteShorthandOptions = {
   schema: {
     headers: genericSchema.headerAuth,
     body: {
-      errorMessage: 'There was an error',
       type: 'object',
-      required: postBodyRequiredKeys,
-      maxProperties: 25,
       properties: {
-        name: {
-          type: 'string',
-          maxLength: 25,
-          minLength: 3
-        },
-        adminId: {
-          type: 'string',
-          format: 'uuid'
-        },
-        scoringType: {
-          enum: [ ...SCORING_TYPE ]
-        },
-        teeTime: {
-          type: 'string',
-          nullable: true
-        },
-        courseId: {
-          type: 'string',
-          format: 'uuid'
-        },
-        resultType: {
-          enum: [ ...RESULT_TYPES ]
-        },
-        participantType: {
-          enum: [ ...PARTICIPANTS_TYPE ]
-        },
-        participantIds: {
+        contests: {
           type: "array",
-          maxItems: MAX_CONTEST_PARTICIPANTS,
-          uniqueItems: true,
+          maxItems: MAX_CONTESTS,
           items: {
-            type:  'string',
-            format: 'uuid'
+            type:  'object',
+            properties: {
+              numMatches: {
+                type: 'number',
+                max: MAX_CONTESTS
+              },
+              name: {
+                type: 'string',
+                maxLength: MAX_STRING_LENGTH
+              },
+              scoringType: {
+                enum: [ ...SCORING_TYPE ]
+              },
+              resultType: {
+                enum: [ ...RESULT_TYPES ]
+              },
+              participantType: {
+                enum: [ ...PARTICIPANTS_TYPE ]
+              },
+              participants: {
+                type: 'array',
+                maxLength: MAX_CONTEST_PARTICIPANTS,
+                items: {
+                  type: 'object',
+                  requiredProperties: [ 'firstName', 'lastName', 'club', 'ghin' ],
+                  maxProperties: 4,
+                  properties: {
+                    firstName: {
+                      type: 'string',
+                      maxLength: MAX_STRING_LENGTH
+                    },
+                    lastName: {
+                      type: 'string',
+                      maxLength: MAX_STRING_LENGTH
+                    },
+                    club: {
+                      type: 'string',
+                      maxLength: MAX_STRING_LENGTH
+                    },
+                    ghin: {
+                      type: 'string',
+                      maxLength: MAX_STRING_LENGTH
+                    },
+                  }
+                }
+              },
+              course: {
+                type: 'object',
+                requiredProperties: [ 'id', 'fullName', 'city', 'state' ],
+                maxProperties: 4,
+                properties: {
+                  id: {
+                    type: 'string',
+                    format: 'uuid'
+                  },
+                  fullName: {
+                    type: 'string',
+                    maxLength: MAX_STRING_LENGTH
+                  },
+                  city: {
+                    type: 'string',
+                    maxLength: MAX_STRING_LENGTH
+                  },
+                  state: {
+                    type: 'string',
+                    maxLength: 2
+                  }
+                }
+              }
+            }
           }
-        },
-        parentContestId: {
-          type: 'string',
-          nullable: true,
-          format: 'uuid'
-        },
-        payoutId: {
-          type: 'string',
-          nullable: true,
-          format: 'uuid'
         }
       }
-    },
+    }
   }
 }
 
@@ -99,7 +128,7 @@ const getUserContests: RouteShorthandOptions = {
 }
 
 export default {
-  post,
+  postContests,
   get,
   getUserContests
 }

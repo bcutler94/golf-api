@@ -1,59 +1,65 @@
 import { v4 } from "uuid"
-import contestModel, { ContestModel, ContestModelObject, ContestViews, ContestViewTypes, Individual, MatchPlayResults, Participants, ParticipantTypes, Results, ResultTypes, Team } from "../models/contest-model"
-import { POSTContestRoute } from "../routers/contest-router"
+import contestModel, { ChildContest, ContestModelObject, ContestStatuses, ContestViews, ContestViewTypes, ParentContest, ParticipantTypes, ResultTypes, ScoringTypes, SingleContest} from "../models/contest-model"
+import { Contest, ContestPlayer, POSTContestRoute } from "../routers/contest-router"
 
-const getResults = (resultType: ResultTypes): Results[ResultTypes] => {
-  switch (resultType) {
-    case 'match-play':
+const createContests = async (userId: string, contests: Contest[]) => {
+
+  if (contests.length > 1) {
+
+    const [ parentContest, ...childrenContests ] = contests;
+
+    const parentContestId = v4();
+
+    const parentContestInput: ParentContest = {
+      type: 'parent',
+      id: parentContestId,
+      adminId: userId,
+      name: parentContest.name,
+      participantType: parentContest.participantType,
+      participants: parentContest.participants,
+      childContestIds: [],
+      status: 'queued',
+      leaderboardId: null
+    }
+
+    const childrenContestInputs: ChildContest[] = childrenContests.map(contest => {
+      const id = v4();
+      parentContestInput.childContestIds.push(id);
       return {
-        resultType,
-        winningScorecardId: '',
-        holesPlayed: 0,
-        score: 'AS'
+        type: 'child',
+        id,
+        status: 'queued',
+        adminId: userId,
+        name: contest.name,
+        parentContestId,
+        participantType: contest.participantType,
+        resultType: contest.resultType,
+        scoringType: contest.scoringType,
+        leaderboardId: null,
       }
-    default:
-      throw new Error ('There was an error creating contest [resultType]')
+    });
+
+    return await contestModel.createContests([ parentContestInput, ...childrenContestInputs ])
+
+  } else {
+
+    const [ singleContest ] = contests;
+
+    const singleContestInput: SingleContest = {
+      type: 'single',
+      id: v4(),
+      status: 'queued',
+      adminId: userId,
+      name: singleContest.name,
+      participantType: singleContest.participantType,
+      resultType: singleContest.resultType,
+      scoringType: singleContest.scoringType,
+      leaderboardId: null
+    }
+
+    return await contestModel.createContests([ singleContestInput ]);
+
   }
-}
-
-
-const getParticipants = (participantType: ParticipantTypes, participantIds: Array<string>): Participants[ParticipantTypes] => {
-  switch (participantType) {
-    case 'individual':
-      return {
-        participantType: 'individual',
-        homePlayerId: null,
-        userIds: participantIds
-      }
-    case 'team':
-      return {
-        participantType: 'team',
-        homeTeamId: null,
-        teamIds: participantIds
-      }
-    default:
-        throw new Error ('There was an error creating contest [participantType]')
-  }
-}
-
-const createContest = async (userId: string, contest: POSTContestRoute['Body']): Promise<string> => {
-
-  const { scoringType, teeTime, courseId, resultType, participantType, participantIds, payoutId, name } = contest
-
-  return await contestModel.createContest({
-    adminId: userId,
-    name,
-    scoringType,
-    status: 'queued',
-    id: v4(),
-    teeTime,
-    courseId,
-    scorecardIds: [],
-    results: getResults(resultType),
-    participants: getParticipants(participantType, participantIds),
-    parentContestId: null,
-    payoutId
-  })
 }
 
 const getContest = async (contestId: string): Promise<ContestModelObject<ResultTypes, ParticipantTypes>> => {
@@ -66,7 +72,7 @@ const getUserContests = async <T extends ContestViewTypes>(userId: string, view:
 }
 
 export default {
-  createContest,
+  createContests,
   getContest,
   getUserContests
 }

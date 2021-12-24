@@ -213,7 +213,7 @@ const searchPlayers = async (fullName: string): Promise<GHINGolfer[]> => {
     return golfers;
   } catch (e) {
     logger.error('there was an error getting user from GHIN API', e)
-    throw e
+    throw new Error ('There was an error searching for players, please try again later.')
   }
 }
 
