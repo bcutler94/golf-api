@@ -8,6 +8,7 @@ import hooks from './util/hooks';
 import database from './data-layer/database';
 import courseRouter from './routers/course-router';
 import playerRouter from './routers/players-router';
+import pubsub from './pubsub/pubsub';
 
 interface SuccessResponse<JSON> {
   success: true
@@ -60,6 +61,7 @@ server.register(playerRouter, { prefix: 'v1' })
 
 const start = async () => {
   await database.startDB();
+  await pubsub.startPubSub({ attachListeners: true });
   
   server.listen(process.env.PORT || 8080, process.env.HOST || '127.0.0.1', (err, address) => {
     if (err) {

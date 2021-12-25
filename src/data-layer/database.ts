@@ -2,7 +2,7 @@ import { Db, MongoClient } from "mongodb";
 import logger from "../util/logger";
 
 // Replace the uri string with your MongoDB deployment's connection string.
-const uri = process.env.DATABASE_URL || 'mongodb://127.0.0.1:27017';
+export const uri = process.env.DATABASE_URL || 'mongodb://127.0.0.1:27017';
 
 let db: Db;
 

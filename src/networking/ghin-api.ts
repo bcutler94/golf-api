@@ -9,9 +9,10 @@ ghinGaxios.instance.defaults = {
   baseURL: GHIN_URL,
   retry: true,
   retryConfig: {
-    retry: 5,
-    retryDelay: 500,
-    onRetryAttempt: () => logger.warn('there was an error retying')
+    retry: 10,
+    retryDelay: 5000,
+    onRetryAttempt: (err) => logger.warn(`Error retrying message [${err.message}], code ${err.code}`),
+    shouldRetry: () => true
   },
   responseType: 'json'
 }
@@ -240,7 +241,7 @@ const getClubGolfers = async (clubId: string, page: number): Promise<GHINGolfer[
     });
     return golfers;
   } catch (e) {
-    logger.warn('there was an error getting golfers from GHIN API', clubId)
+    logger.warn('there was an error getting golfers from GHIN API', clubId, e)
     return []
     // throw new Error ('There was an error searching for players, please try again later.')
   }
