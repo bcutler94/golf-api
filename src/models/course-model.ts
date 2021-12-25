@@ -50,12 +50,12 @@ export interface CourseModel {
     allYear: boolean
   }
   location: {
-    latitude: number
-    longitude: number
-    address: string
-    city: string
+    latitude: number | null
+    longitude: number | null
+    address: string | null
+    city: string | null
     state: string
-    zip: string
+    zip: string | null
     country: string
   }
 

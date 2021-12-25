@@ -187,7 +187,7 @@ export interface GetCourseInfoResponse {
   }>
 }
 
-const getCourseInfo = async (courseId: string): Promise<GetCourseInfoResponse> => {
+const getCourseInfo = async (courseId: number): Promise<GetCourseInfoResponse> => {
   try {
     const token = await login();
     const { data } = await ghinGaxios.request<GetCourseInfoResponse>({
@@ -246,10 +246,85 @@ const getClubGolfers = async (clubId: string, page: number): Promise<GHINGolfer[
   }
 }
 
+interface GHINAssociation {
+  id: number
+}
+interface GetAssociationsResponse {
+  associations: GHINAssociation[]
+}
+
+const getAssociations = async (): Promise<GHINAssociation[]> => {
+  try {
+    const token = await login();
+    const { data: { associations } } = await ghinGaxios.request<GetAssociationsResponse>({
+      method: 'GET',
+      url: `/associations.json`,
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return associations;
+  } catch (e) {
+    logger.warn('there was an error getting associatons from GHIN API', e)
+    throw e
+  }
+}
+
+export interface GHINAssociationCourse {
+  golf_association_id:	number
+  club_number:	number
+  club_name:	string
+  phone:	string
+  is_dac:	boolean
+  technology_provider:	string
+  email:	string
+  authorized:	boolean
+  is_test:	boolean
+  status:	string
+  club_category:	string
+  short_name:	string
+  website:	string
+  usga_version:	string
+  handicap_chairperson:	string
+  handicap_chairperson_ghin_number:	number | null
+  date:	string
+  created_at:	string
+  updated_at:	string
+  logo:	string
+  club_type:	string
+  id:	number
+  city:	string
+  state:	string
+  active_golfers_count:	number
+}
+
+interface GetAssociationCoursesResponse {
+  courses: GHINAssociationCourse[]
+}
+
+const getAssociationCourses = async (associationId: number): Promise<GHINAssociationCourse[]> => {
+  try {
+    const token = await login();
+    const { data: { courses } } = await ghinGaxios.request<GetAssociationCoursesResponse>({
+      method: 'GET',
+      url: `/associations/${associationId}/clubs.json`,
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return courses;
+  } catch (e) {
+    logger.warn('there was an error getting associatons from GHIN API')
+    throw e
+  }
+}
+
 export default {
   getUser,
   getCourses,
   getCourseInfo,
   searchPlayers,
-  getClubGolfers
+  getClubGolfers,
+  getAssociations,
+  getAssociationCourses
 }
