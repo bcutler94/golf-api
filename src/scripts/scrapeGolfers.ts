@@ -18,7 +18,7 @@ const toPlayerModal = (ghinGolfer: GHINGolfer): PlayerModel => {
 
 const scrapeGolfers = async () => {
   const collection = await getCourseCollection();
-  const cursor = await collection.find({}).addCursorFlag('noCursorTimeout', true);
+  const cursor = await collection.find({}).addCursorFlag('exhaust', true)
   while (await cursor.hasNext()) {
     const course = await cursor.next();
     if (!course) continue;
