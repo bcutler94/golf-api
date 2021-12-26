@@ -9,6 +9,7 @@ import database from './data-layer/database';
 import courseRouter from './routers/course-router';
 import playerRouter from './routers/players-router';
 import pubsub from './pubsub/pubsub';
+import throng from 'throng';
 
 interface SuccessResponse<JSON> {
   success: true
@@ -72,4 +73,4 @@ const start = async () => {
   })
 }
 
-export default start
+throng(start)
