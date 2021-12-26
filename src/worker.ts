@@ -3,8 +3,8 @@ import WORKERS from "./workers/workers";
 
 
 const start = async () => {
-  for (const { worker, enableThreading } of WORKERS) {
-    enableThreading ? throng(worker) : worker()
+  for (const { worker, enable, enableThreading } of WORKERS) {
+    if (enable) enableThreading ? throng(worker) : worker()
   }
 }
 

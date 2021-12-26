@@ -1,13 +1,21 @@
+import start from "../random"
 import pubsubworker from "./pubsub"
 
 interface Worker {
   worker(): void
+  enable: boolean
   enableThreading: boolean
 }
 
 const WORKERS: Worker[] = [
   {
+    worker: () => start(),
+    enable: true,
+    enableThreading: false
+  },
+  {
     worker: () => pubsubworker(),
+    enable: true,
     enableThreading: true
   }
 ]

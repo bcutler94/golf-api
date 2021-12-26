@@ -20,9 +20,11 @@ const scriptToRun = async () => {
 
 }
 
-console.time('random')
-scriptToRun()
-  .then(() => {
-    logger.info('done running rando')
-    console.timeEnd('random')
-  })
+const start = async () => {
+  console.time('random')
+  await scriptToRun()
+  logger.info('done running rando')
+  console.timeEnd('random')
+}
+
+export default start

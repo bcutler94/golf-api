@@ -8,7 +8,6 @@ export interface PlayerModel {
   firstName: string
   lastName: string
   clubName: string
-  fullName: string
   currentHandicap: number
 }
 
@@ -22,7 +21,7 @@ const getPlayerCollection = async () => {
 const addIndexes = async () => {
   try {
     const collection = await getPlayerCollection()
-    const result = await collection.createIndex({ externalId: 1 }, { unique: true });
+    const result = await collection.createIndex({ externalId: 1, lastName: 1, firstName: 1, clubName: 1 }, { unique: true });
     logger.info('created index', result)
   } catch (e) {
     logger.error(`error adding index to course model`, e)
