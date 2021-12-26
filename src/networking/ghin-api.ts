@@ -228,7 +228,7 @@ interface GetClubGolfersResponse {
   golfers: GHINGolfer[]
 }
 
-const getClubGolfers = async (clubId: string, page: number): Promise<GHINGolfer[]> => {
+const getClubGolfers = async (clubId: string, page: number): Promise<GHINGolfer[] | null> => {
   try {
     const token = await login();
     const { data: { golfers } } = await ghinGaxios.request<GetClubGolfersResponse>({
@@ -240,8 +240,8 @@ const getClubGolfers = async (clubId: string, page: number): Promise<GHINGolfer[
     });
     return golfers;
   } catch (e) {
-    logger.warn('there was an error getting golfers from GHIN API', clubId, e)
-    return []
+    logger.warn('there was an error getting golfers from GHIN API')
+    return null;
     // throw new Error ('There was an error searching for players, please try again later.')
   }
 }

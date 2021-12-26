@@ -24,6 +24,10 @@ const processGolfers = async (course: CourseModelObject) => {
   const collection = await playerModel.getPlayerCollection();
   while (true) {
     const ghinGolfers = await ghinApi.getClubGolfers(course.externalId, i);
+    if (ghinGolfers === null) {
+      logger.info(`failed saving golfers for ${course.courseName}`)
+      return;
+    }
     if (!ghinGolfers.length) break;
     for (const g of ghinGolfers) {
       const input = toPlayerModal(g);
