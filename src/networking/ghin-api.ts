@@ -9,8 +9,8 @@ ghinGaxios.instance.defaults = {
   baseURL: GHIN_URL,
   retry: true,
   retryConfig: {
-    retry: 10,
-    retryDelay: 5000,
+    retry: 5,
+    retryDelay: 1000,
     onRetryAttempt: (err) => logger.warn(`Error retrying message [${err.message}], code ${err.code}`),
     shouldRetry: () => true
   },
