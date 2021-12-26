@@ -20,18 +20,18 @@ const toPlayerModal = (ghinGolfer: GHINGolfer): PlayerModel => {
 
 const processGolfers = async (course: CourseModelObject) => {
   let i = 1;
-  const commands: AnyBulkWriteOperation<PlayerModel>[] = [];
+  // const commands: AnyBulkWriteOperation<PlayerModel>[] = [];
   const collection = await playerModel.getPlayerCollection();
   while (true) {
     const ghinGolfers = await ghinApi.getClubGolfers(course.externalId, i);
     if (!ghinGolfers.length) break;
     for (const g of ghinGolfers) {
       const input = toPlayerModal(g);
-      const command: UpdateOneModel<PlayerModel> = {
-        filter: { externalId: input.externalId, lastName: input.lastName, clubName: input.clubName },
-        update: { $set:toPlayerModal(g) },
-        upsert: true
-      }
+      // const command: UpdateOneModel<PlayerModel> = {
+      //   filter: { externalId: input.externalId, lastName: input.lastName, clubName: input.clubName },
+      //   update: { $set:toPlayerModal(g) },
+      //   upsert: true
+      // }
       await collection.findOneAndReplace({ externalId: input.externalId, lastName: input.lastName, clubName: input.clubName }, toPlayerModal(g), { upsert: true })   
     }
     i++
