@@ -20,7 +20,7 @@ const CONCURRENCY = os.cpus().length;
 
 const attachListeners = (agenda: Agenda) => {
 
-  agenda.define(JOBS.processGolfers, { concurrency: CONCURRENCY }, async (job: Job) => {
+  agenda.define(JOBS.processGolfers, { concurrency: CONCURRENCY, lockLimit: 1 }, async (job: Job) => {
     const data = job.attrs.data;
     if (!data) throw new Error ('no course data')
     await jobs.processGolfers(data.course)
