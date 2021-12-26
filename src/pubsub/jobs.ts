@@ -29,15 +29,18 @@ const processGolfers = async (course: CourseModelObject) => {
       return;
     }
     if (!ghinGolfers.length) break;
+    const commands: AnyBulkWriteOperation<PlayerModel>[] = []
     for (const g of ghinGolfers) {
       const input = toPlayerModal(g);
-      // const command: UpdateOneModel<PlayerModel> = {
-      //   filter: { externalId: input.externalId, lastName: input.lastName, clubName: input.clubName },
-      //   update: { $set:toPlayerModal(g) },
-      //   upsert: true
-      // }
-      await collection.findOneAndReplace({ externalId: input.externalId, lastName: input.lastName, clubName: input.clubName }, toPlayerModal(g), { upsert: true })   
+      const command: UpdateOneModel<PlayerModel> = {
+        filter: { externalId: input.externalId, lastName: input.lastName, clubName: input.clubName },
+        update: { $set:toPlayerModal(g) },
+        upsert: true
+      }
+      commands.push({ updateOne: command })
+      // await collection.findOneAndReplace({ externalId: input.externalId, lastName: input.lastName, clubName: input.clubName }, toPlayerModal(g), { upsert: true })   
     }
+    await collection.bulkWrite(commands)
     i++
   }
   logger.info(`successfully saved golfers for ${course.courseName}`)
