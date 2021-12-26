@@ -62,7 +62,6 @@ server.register(playerRouter, { prefix: 'v1' })
 
 const start = async () => {
   await database.startDB();
-  await pubsub.startPubSub({ attachListeners: true });
   
   server.listen(process.env.PORT || 8080, process.env.HOST || '127.0.0.1', (err, address) => {
     if (err) {
