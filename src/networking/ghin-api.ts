@@ -9,9 +9,9 @@ ghinGaxios.instance.defaults = {
   baseURL: GHIN_URL,
   retry: true,
   retryConfig: {
-    retryDelay: 10,
+    // retryDelay: 10,
     onRetryAttempt: (err) => logger.warn(`Error retrying message [${err.message}], code ${err.code}`),
-    shouldRetry: () => true
+    // shouldRetry: () => true
   },
   responseType: 'json'
 }
