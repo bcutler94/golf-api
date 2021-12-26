@@ -38,7 +38,7 @@ const login = async (): Promise<string> => {
     });
     return token;
   } catch (e) {
-    logger.error('there was an error logging into GHIN API', e)
+    logger.error('there was an error logging into GHIN API')
     throw e
   }
 }
