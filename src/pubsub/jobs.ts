@@ -32,11 +32,10 @@ const processGolfers = async (course: CourseModelObject) => {
         update: { $set:toPlayerModal(g) },
         upsert: true
       }
-      commands.push({ updateOne: command });      
+      await collection.findOneAndReplace({ externalId: input.externalId, lastName: input.lastName, clubName: input.clubName }, toPlayerModal(g), { upsert: true })   
     }
     i++
   }
-  commands.length && await collection.bulkWrite(commands)
   logger.info(`successfully saved golfers for ${course.courseName}`)
 }
 
