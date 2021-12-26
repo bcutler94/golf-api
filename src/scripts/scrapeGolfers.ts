@@ -5,7 +5,7 @@ import logger from "../util/logger";
 const scrapeGolfers = async () => {
   logger.info('starting to scrape golfers')
   const collection = await getCourseCollection();
-  const cursor = await collection.find({}, { limit: 100 })
+  const cursor = await collection.find({})
   while (await cursor.hasNext()) {
     const course = await cursor.next();
     if (!course) continue;
