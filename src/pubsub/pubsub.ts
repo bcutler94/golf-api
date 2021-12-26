@@ -1,8 +1,5 @@
-import Agenda, { Job, JobAttributes, JobAttributesData } from "agenda";
-import { AnyBulkWriteOperation } from "mongodb";
+import Agenda, { Job } from "agenda";
 import database, { uri } from "../data-layer/database";
-import { CourseModelObject } from "../models/course-model";
-// import jobs from "./jobs";
 import os from 'os'
 import logger from "../util/logger";
 import jobs from "./jobs";
@@ -11,16 +8,12 @@ export const JOBS = {
   processGolfers: 'process-golfers'
 }
 
-interface ProcessGolfers extends JobAttributesData {
-  course: CourseModelObject
-}
-
 const AGENDA_NAME = os.hostname + "-" + process.pid;
 const CONCURRENCY = os.cpus().length;
 
 const attachListeners = (agenda: Agenda) => {
 
-  agenda.define(JOBS.processGolfers, { concurrency: CONCURRENCY, lockLimit: 1 }, async (job: Job) => {
+  agenda.define(JOBS.processGolfers, { concurrency: CONCURRENCY, lockLimit: CONCURRENCY }, async (job: Job) => {
     const data = job.attrs.data;
     if (!data) throw new Error ('no course data')
     await jobs.processGolfers(data.course)
