@@ -10,7 +10,7 @@ interface Worker {
 const WORKERS: Worker[] = [
   {
     worker: () => start(),
-    enable: true,
+    enable: false,
     enableThreading: false
   },
   {
