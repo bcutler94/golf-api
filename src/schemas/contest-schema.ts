@@ -40,8 +40,8 @@ const postContests: RouteShorthandOptions = {
                 maxLength: MAX_CONTEST_PARTICIPANTS,
                 items: {
                   type: 'object',
-                  requiredProperties: [ 'firstName', 'lastName', 'club', 'ghin' ],
-                  maxProperties: 4,
+                  requiredProperties: [ 'fullName', 'firstName', 'lastName', 'clubName', 'id', 'currentHandicap', 'externalId', '_id' ],
+                  maxProperties: 8,
                   properties: {
                     firstName: {
                       type: 'string',
@@ -67,9 +67,9 @@ const postContests: RouteShorthandOptions = {
                 requiredProperties: [ 'id', 'fullName', 'city', 'state' ],
                 maxProperties: 4,
                 properties: {
-                  id: {
+                  id: { // this should be uuid format but client can send empty string 
                     type: 'string',
-                    format: 'uuid'
+                    maxLength: MAX_STRING_LENGTH
                   },
                   fullName: {
                     type: 'string',
@@ -127,8 +127,27 @@ const getUserContests: RouteShorthandOptions = {
   }
 }
 
+const getChildContests: RouteShorthandOptions = {
+  schema: {
+    headers: genericSchema.headerAuth,
+    params: {
+      type: 'object',
+      required: [ 'contestId' ],
+      maxProperties: 1,
+      properties: {
+        contestId: {
+          type: 'string',
+          format: 'uuid'
+        }
+      }
+    }
+  }
+}
+
+
 export default {
   postContests,
   get,
-  getUserContests
+  getUserContests,
+  getChildContests
 }

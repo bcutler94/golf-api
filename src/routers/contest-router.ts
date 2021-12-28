@@ -1,5 +1,5 @@
 import { FastifyPluginCallback } from "fastify";
-import { ContestModel, ContestViews, ContestViewTypes, ParticipantTypes, ResultTypes, ScoringTypes } from "../models/contest-model";
+import { ContestModel, ContestTypes, ContestViews, ContestViewTypes, ContestWithChildren, ParticipantTypes, ResultTypes, ScoringTypes } from "../models/contest-model";
 import contestHandler from "../route-handlers/contest-handler";
 import middleware from "../util/middleware";
 import contestSchema from "../schemas/contest-schema";
@@ -48,7 +48,9 @@ interface GetContestReply {
   contest: ContestModel
 }
 interface GETContestRoute {
-  Params: GetContestParams,
+  Params: {
+    contestId: string
+  },
   Reply: APIResponse<GetContestReply>
 }
 
@@ -62,11 +64,25 @@ interface GetUserContestReply {
 interface GETUserContests {
   Querystring: {
     search: string
+    types: string
     view: ContestViewTypes
   }
   Reply: APIResponse<GetUserContestReply>
 }
 
+/**
+ * GET child contests
+ */
+
+interface GetContestWithChildrenReply { 
+  contest: ContestWithChildren 
+}
+interface GETChildContests {
+  Params: {
+    contestId: string
+  },
+  Reply: APIResponse<GetContestWithChildrenReply>
+}
 
 const contestRouter: FastifyPluginCallback = async (server) => {
 
@@ -112,12 +128,38 @@ const contestRouter: FastifyPluginCallback = async (server) => {
     schema: contestSchema.getUserContests.schema,
     handler: async (req, rep) => {
       try {
-        const { user: { userId }, query: { view } } = req;
-        const contests = await contestHandler.getUserContests(userId, view);
+        const { user: { userId }, query: { view, types } } = req;
+        logger.info(types)
+        const contests = await contestHandler.getUserContests(userId, types.split(',') as ContestTypes[], view);
         rep.send({ success: true, data: { contests } })
       } catch (e) {
         logger.error('error POST /contest', e)
         rep.send({ success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' })
+      }
+    }
+  })
+
+  server.route<GETChildContests>({
+    method: 'GET',
+    url: '/contests/:contestId/children',
+    preValidation: [middleware.verifyUser],
+    schema: contestSchema.getChildContests.schema,
+    handler: async (req, rep) => {
+      try {
+        const { params: { contestId } } = req;
+        const contest = await contestHandler.getChildContests(contestId);
+        return {
+          success: true,
+          data: {
+            contest
+          }
+        }
+      } catch (e) {
+        logger.error('error POST /contest', e)
+        return {
+          success: false,
+          errorMessage: e instanceof Error ? e.message : 'An error occurred' 
+        }
       }
     }
   })

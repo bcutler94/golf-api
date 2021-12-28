@@ -1,4 +1,4 @@
-import { AggregationCursor, Db, WithId, Document } from 'mongodb';
+import { AggregationCursor, Db, WithId, Document, IndexDescription } from 'mongodb';
 import database from '../data-layer/database';
 import logger from '../util/logger';
 
@@ -69,11 +69,17 @@ export const getCourseCollection = async () => {
   return db.collection<CourseModel>('courses');
 }
 
+const COURSE_INDEXES: IndexDescription[] = [
+  {
+    key: { fullName: 'text' }
+  }
+]
+
 const addIndexes = async () => {
   try {
     const collection = await getCourseCollection()
-    const result = await collection.createIndex({ fullName: 1 });
-    logger.info('created index', result)
+    const result = await collection.createIndexes(COURSE_INDEXES);
+    logger.info('created contest indexes', result)
   } catch (e) {
     logger.error(`error adding index to course model`, e)
   }
@@ -95,10 +101,11 @@ const searchCourse = async <T extends CourseViewTypes>(searchTerm: string, viewT
   const collection = await getCourseCollection();
 
   const pipeline: Array<Document> = [
-    { 
+    {
       $match: {
-        fullName: {
-          $regex: searchTerm, $options: 'i'
+        $text: {
+            $search: "\"" + searchTerm + "\"", 
+            $caseSensitive: false
         }
       }
     }

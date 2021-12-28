@@ -1,4 +1,4 @@
-import { WithId } from 'mongodb';
+import { AggregationCursor, CreateIndexesOptions, IndexDescription, IndexSpecification, WithId } from 'mongodb';
 import database from '../data-layer/database';
 import logger from '../util/logger';
 
@@ -18,11 +18,17 @@ const getPlayerCollection = async () => {
   return db.collection<PlayerModel>('players');
 }
 
+const PLAYER_INDEXES: IndexDescription[] = [
+  {
+    key: { fullName: 'text' },
+  }
+]
+
 const addIndexes = async () => {
   try {
     const collection = await getPlayerCollection()
-    const result = await collection.createIndex({ externalId: 1, lastName: 1, firstName: 1, clubName: 1 }, { unique: true });
-    logger.info('created index', result)
+    const res = await collection.createIndexes(PLAYER_INDEXES)
+    logger.info('created player indexes', res)
   } catch (e) {
     logger.error(`error adding index to course model`, e)
   }
@@ -30,6 +36,29 @@ const addIndexes = async () => {
 
 addIndexes()
 
+const searchPlayers = async (searchTerm: string): Promise<AggregationCursor<PlayerModel>> => {
+  try {
+    const collection = await getPlayerCollection()
+    return await collection.aggregate([
+      {
+        $match: {
+          $text: {
+              $search: "\"" + searchTerm + "\"", 
+              $caseSensitive: false
+          }
+        }
+      },
+      { 
+        $limit: 10
+      }
+    ])
+  } catch (e) {
+    logger.error(`error searching for players with searchTerm [${searchTerm}]`, e)
+    throw new Error ('There was an error searching for players, please try again later')
+  }
+}
+
 export default {
-  getPlayerCollection
+  getPlayerCollection,
+  searchPlayers
 }

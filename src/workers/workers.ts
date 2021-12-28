@@ -1,4 +1,3 @@
-import start from "../random"
 import pubsubworker from "./pubsub"
 
 interface Worker {
@@ -8,11 +7,6 @@ interface Worker {
 }
 
 const WORKERS: Worker[] = [
-  {
-    worker: () => start(),
-    enable: false,
-    enableThreading: false
-  },
   {
     worker: () => pubsubworker(),
     enable: true,

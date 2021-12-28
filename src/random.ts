@@ -15,8 +15,6 @@ const scriptToRun = async () => {
   await pubsub.startPubSub({ attachListeners: false })
   // insert here below here
 
-  await scrapeGolfers()
-  // await scrapeCourses.runV2()
 
 }
 
@@ -26,5 +24,7 @@ const start = async () => {
   logger.info('done running rando')
   console.timeEnd('random')
 }
+
+start()
 
 export default start

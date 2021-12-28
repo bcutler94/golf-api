@@ -1,7 +1,7 @@
 import ghinGaxios from 'gaxios';
 import logger from '../util/logger';
 
-const GHIN_URL = 'https://api.ghin.com/api/v1';
+const GHIN_URL = 'https://api2.ghin.com/api/v1';
 const GHIN_EMAIL = 'bcutler94@gmail.com';
 const GHIN_PASSWORD = 'Liverpool13'
 
@@ -141,7 +141,7 @@ const getCourses = async (state: string): Promise<Array<GHINCourse>> => {
     const token = await login();
     const { data: { courses } } = await ghinGaxios.request<GetCoursesResponse>({
       method: 'GET',
-      url: `/courses/search.json?country=USA&state=US-${state.toUpperCase()}`,
+      url: `/crsCourseMethods.asmx/SearchCourses.json?state=US-${state.toUpperCase()}&country=USA&source=GHINcom`,
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -318,6 +318,8 @@ const getAssociationCourses = async (associationId: number): Promise<GHINAssocia
     throw e
   }
 }
+
+
 
 export default {
   getUser,

@@ -4,6 +4,7 @@ import { APIResponse } from "../server";
 import logger from "../util/logger";
 import playerSchema from "../schemas/player-schema";
 import playerHandler, { Player } from "../route-handlers/player-handler";
+import { PlayerModel } from "../models/player-model";
 
 /**
  * GET
@@ -11,7 +12,7 @@ import playerHandler, { Player } from "../route-handlers/player-handler";
 
 
 interface SearchPlayersResponse {
-  players: Player[]
+  players: PlayerModel[]
 }
 
 interface GETPlayerSearchRoute {

@@ -1,6 +1,8 @@
 import { WithId, Document, AggregationCursor } from 'mongodb';
+import { pipeline } from 'stream';
 import database from '../data-layer/database';
 import { ContestPlayer } from '../routers/contest-router';
+import { CourseModel } from './course-model';
 
 export const CONTEST_TYPES = [
   'parent',
@@ -9,7 +11,8 @@ export const CONTEST_TYPES = [
 ] as const;
 
 export const CONTEST_VIEW_TYPES = [
-  'preview'
+  'preview',
+  'withChildren'
 ] as const;
 
 export const RESULT_TYPES = [
@@ -45,12 +48,11 @@ export type ContestViewTypes = typeof CONTEST_VIEW_TYPES[number]
 
 export type ResultTypes = typeof RESULT_TYPES[number]
 
-export interface ContestPreView {
+export interface ContestPreview {
   id: string
   type: ContestTypes
   name: string
   status: ContestStatuses
-  teeTime: string | null
   numParticipants: number
   courseName: string
   city: string
@@ -58,24 +60,9 @@ export interface ContestPreView {
 }
 
 export interface ContestViews {
-  'preview': ContestPreView
+  preview: ContestPreview
+  withChildren: ContestWithChildren
 }
-
-// export interface ContestModel<R extends ResultTypes, P extends ParticipantTypes> {
-//   id: string
-//   name: string
-//   adminId: string
-//   // contestType: ContestTypes // do i need this?
-//   scoringType: ScoringTypes
-//   status: ContestStatuses
-//   teeTime: string | null
-//   courseId: string
-//   scorecardIds: Array<string>
-//   results: Results[R]
-//   participants: Participants[P]
-//   parentContestId: string | null
-//   payoutId: string | null
-// }
 
 export interface ParentContest {
   type: 'parent'
@@ -95,6 +82,7 @@ export interface ChildContest {
   adminId: string
   name: string
   parentContestId: string
+  courseId: string
   status: ContestStatuses
   participantType: ParticipantTypes
   resultType: ResultTypes
@@ -107,6 +95,7 @@ export interface SingleContest {
   id: string
   adminId: string
   name: string
+  courseId: string
   status: ContestStatuses
   participantType: ParticipantTypes
   resultType: ResultTypes
@@ -119,9 +108,48 @@ export type ContestModel = ParentContest | ChildContest | SingleContest
 
 export type ContestModelObject<R extends ResultTypes, P extends ParticipantTypes> = WithId<ContestModel>
 
+
 const getContestCollection = async () => {
   const db = await database.getGolfDB()
   return db.collection<ContestModel>('contests');
+}
+
+const addViewToPipeline = (pipeline: Array<Document>, view: ContestViewTypes): Array<Document> => {
+  switch (view) {
+    case 'preview':
+      return [ 
+        ...pipeline, 
+        {
+          $project: { 
+            _id: 0, 
+            type: 1,
+            id: 1, 
+            name: 1, 
+            status: 1, 
+            courseName: { $first: '$course.fullName' }, 
+            city: { $first: '$course.location.city' },
+            state: { $first: '$course.location.state' },
+          }
+        }
+      ]
+    case 'withChildren': 
+    return [ 
+      ...pipeline, 
+      {
+        $project: { 
+          _id: 0, 
+          type: 1,
+          id: 1, 
+          name: 1, 
+          status: 1, 
+          adminId: 1,
+          childContests: 1,
+        }
+      }
+    ]
+    default:
+      throw new Error ('Something really odd happened looking up contests.')
+  }
 }
 
 const createContests = async (contests: ContestModel[]): Promise<void> => {
@@ -138,7 +166,7 @@ const getContest = async (contestId: string): Promise<ContestModelObject<ResultT
   return contest;
 }
 
-const getUserContests = async <T extends ContestViewTypes>(userId: string, view: T): Promise<AggregationCursor<ContestViews[T]>> => {
+const getUserContests = async <T extends ContestViewTypes>(userId: string, contestTypes: ContestTypes[], view: T): Promise<AggregationCursor<ContestViews[T]>> => {
   const collection = await getContestCollection();
   const pipeline: Array<Document> = [
     {
@@ -149,7 +177,7 @@ const getUserContests = async <T extends ContestViewTypes>(userId: string, view:
     },
     {
       $match: { 
-        type: { $in: [ 'parent', 'single' ] },
+        type: { $in: contestTypes },
         $or: [ 
           { adminId: { $eq: userId } }, 
           { $expr: { $in: [ userId, '$teams.userIds' ] } }, 
@@ -160,34 +188,64 @@ const getUserContests = async <T extends ContestViewTypes>(userId: string, view:
     {
       $lookup: { from: 'courses', localField: 'courseId', foreignField: 'id', as: 'courses' }
     }
-  ]
+  ];
 
-  switch (view) {
-    case 'preview':
-      pipeline.push({
-        $project: { 
-          _id: 0, 
-          type: 1,
-          id: 1, 
-          name: 1, 
-          status: 1, 
-          courseName: { $first: '$courses.fullName' }, 
-          city: { $first: '$courses.location.city' },
-          state: { $first: '$courses.location.state' },
-          // numParticipants: { $size: '$participants' }
-        }
-      });
-      break;
-    default:
-      throw new Error ('Something really odd happened looking up contests.')
-  }
-
-  return await collection.aggregate<ContestViews[T]>(pipeline);
+  return await collection.aggregate<ContestViews[T]>(addViewToPipeline(pipeline, 'preview'));
+}
+export interface ContestWithChildren {
+  type: 'parent'
+  id: string
+  adminId: string
+  name: string
+  status: ContestStatuses
+  childContests: ContestPreview[]
 }
 
+const getChildContests = async (contestId: string): Promise<AggregationCursor<ContestViews['withChildren']>> => {
+  const collection = await getContestCollection();
+
+  const lookupPipeline: Array<Document> = [
+    {
+      '$match': {
+        '$expr': {
+          '$in': [
+            '$id', '$$childContestIds'
+          ]
+        }
+      }
+    }, {
+      '$lookup': {
+        'from': 'courses', 
+        'localField': 'courseId', 
+        'foreignField': 'id', 
+        'as': 'course'
+      }
+    }
+  ];
+
+  const pipeline: Array<Document> = [
+    {
+      '$match': {
+        'id': contestId
+      }
+    }, {
+      '$lookup': {
+        'from': 'contests', 
+        'let': {
+          'childContestIds': '$childContestIds'
+        }, 
+        'pipeline': addViewToPipeline(lookupPipeline, 'preview'), 
+        'as': 'childContests'
+      }
+    }
+  ];
+
+  return await collection.aggregate(addViewToPipeline(pipeline, 'withChildren'))
+}
 
 export default {
   createContests,
   getContest,
-  getUserContests
+  getUserContests,
+  getChildContests
 }
