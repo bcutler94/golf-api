@@ -1,7 +1,7 @@
 import { WithId, Document, AggregationCursor } from 'mongodb';
 import { pipeline } from 'stream';
 import database from '../data-layer/database';
-import { ContestPlayer } from '../routers/contest-router';
+import { ContestPlayer, ContestTeam } from '../routers/contest-router';
 import { CourseModel } from './course-model';
 
 export const CONTEST_TYPES = [
@@ -15,8 +15,13 @@ export const CONTEST_VIEW_TYPES = [
   'withChildren'
 ] as const;
 
-export const RESULT_TYPES = [
-  'match-play'
+export const TEAM_RESULT_TYPES = [
+  'best-ball-match-play',
+  'singles-match-play'
+] as const;
+
+export const INDIVIDUAL_RESULT_TYPES = [
+  'individual-stoke-play',
 ] as const;
 
 export const CONTEST_STATUSES = [
@@ -46,17 +51,25 @@ export type ContestStatuses = typeof CONTEST_STATUSES[number]
 
 export type ContestViewTypes = typeof CONTEST_VIEW_TYPES[number]
 
-export type ResultTypes = typeof RESULT_TYPES[number]
+export type IndvidualResultTypes = typeof INDIVIDUAL_RESULT_TYPES[number]
+
+export type TeamResultTypes = typeof TEAM_RESULT_TYPES[number]
+
+export type ResultTypes = IndvidualResultTypes | TeamResultTypes
 
 export interface ContestPreview {
   id: string
   type: ContestTypes
   name: string
   status: ContestStatuses
-  numParticipants: number
-  courseName: string
-  city: string
-  state: string
+  teams: ContestTeam[] | null
+  players: ContestPlayer[] | null
+  courseName: string | undefined
+  city: string | null
+  state: string | null
+  childContestIds: string[] | null
+  resultType: ResultTypes | null
+  scoringType: ScoringTypes | null
 }
 
 export interface ContestViews {
@@ -73,7 +86,8 @@ export interface ParentContest {
   status: ContestStatuses
   participantType: ParticipantTypes
   leaderboardId: null | string
-  participants: ContestPlayer[]
+  teams: ContestTeam[]
+  players: ContestPlayer[]
 }
 
 export interface ChildContest {
@@ -84,7 +98,6 @@ export interface ChildContest {
   parentContestId: string
   courseId: string
   status: ContestStatuses
-  participantType: ParticipantTypes
   resultType: ResultTypes
   scoringType: ScoringTypes
   leaderboardId: null | string
@@ -101,6 +114,8 @@ export interface SingleContest {
   resultType: ResultTypes
   scoringType: ScoringTypes
   leaderboardId: null | string
+  teams: ContestTeam[]
+  players: ContestPlayer[]
 }
 
 export type ContestModel = ParentContest | ChildContest | SingleContest
@@ -126,9 +141,15 @@ const addViewToPipeline = (pipeline: Array<Document>, view: ContestViewTypes): A
             id: 1, 
             name: 1, 
             status: 1, 
+            players: 1,
+            teams: 1,
+            childContestIds: 1,
+            resultType: 1,
+            scoringType: 1,
             courseName: { $first: '$course.fullName' }, 
             city: { $first: '$course.location.city' },
             state: { $first: '$course.location.state' },
+
           }
         }
       ]
@@ -144,6 +165,8 @@ const addViewToPipeline = (pipeline: Array<Document>, view: ContestViewTypes): A
           status: 1, 
           adminId: 1,
           childContests: 1,
+          players: 1,
+          teams: 1,
         }
       }
     ]
@@ -170,18 +193,12 @@ const getUserContests = async <T extends ContestViewTypes>(userId: string, conte
   const collection = await getContestCollection();
   const pipeline: Array<Document> = [
     {
-      $lookup: { from: 'teams', localField: 'participants.teamIds', foreignField: 'id', as: 'teams' }
-    },
-    {
-      $lookup: { from: 'players', localField: 'participants.playerIds', foreignField: 'id', as: 'players' }
-    },
-    {
       $match: { 
         type: { $in: contestTypes },
         $or: [ 
           { adminId: { $eq: userId } }, 
-          { $expr: { $in: [ userId, '$teams.userIds' ] } }, 
-          { $expr: { $in: [ userId, '$players.playerIds' ] } } 
+          { $expr: { $in: [ userId, '$teams.playerIds' ] } }, 
+          { $expr: { $eq: [ userId, '$players.playerId' ] } } 
         ] 
       }
     },
@@ -198,6 +215,8 @@ export interface ContestWithChildren {
   adminId: string
   name: string
   status: ContestStatuses
+  players: ContestPlayer[]
+  teams: ContestTeam[]
   childContests: ContestPreview[]
 }
 

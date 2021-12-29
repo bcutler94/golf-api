@@ -16,7 +16,8 @@ const createContests = async (userId: string, contests: Contest[]) => {
       adminId: userId,
       name: parentContest.name,
       participantType: parentContest.participantType,
-      participants: parentContest.participants,
+      teams: parentContest.teams,
+      players: parentContest.players,
       childContestIds: [],
       status: 'queued',
       leaderboardId: null
@@ -33,7 +34,6 @@ const createContests = async (userId: string, contests: Contest[]) => {
         courseId: contest.course.id,
         name: contest.name,
         parentContestId,
-        participantType: contest.participantType,
         resultType: contest.resultType,
         scoringType: contest.scoringType,
         leaderboardId: null,
@@ -56,7 +56,9 @@ const createContests = async (userId: string, contests: Contest[]) => {
       participantType: singleContest.participantType,
       resultType: singleContest.resultType,
       scoringType: singleContest.scoringType,
-      leaderboardId: null
+      leaderboardId: null,
+      teams: singleContest.teams,
+      players: singleContest.players,
     }
 
     return await contestModel.createContests([ singleContestInput ]);

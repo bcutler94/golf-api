@@ -1,5 +1,5 @@
 import { RouteShorthandOptions } from "fastify"
-import { CONTEST_VIEW_TYPES, PARTICIPANTS_TYPE, RESULT_TYPES, SCORING_TYPE } from "../models/contest-model"
+import { CONTEST_VIEW_TYPES, INDIVIDUAL_RESULT_TYPES, PARTICIPANTS_TYPE, SCORING_TYPE, TEAM_RESULT_TYPES } from "../models/contest-model"
 import genericSchema from "./generic-schema"
 
 const MAX_CONTEST_PARTICIPANTS = 1000
@@ -30,7 +30,7 @@ const postContests: RouteShorthandOptions = {
                 enum: [ ...SCORING_TYPE ]
               },
               resultType: {
-                enum: [ ...RESULT_TYPES ]
+                enum: [ ...TEAM_RESULT_TYPES, ...INDIVIDUAL_RESULT_TYPES ]
               },
               participantType: {
                 enum: [ ...PARTICIPANTS_TYPE ]

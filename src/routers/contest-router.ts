@@ -10,18 +10,21 @@ import { CourseSearchView } from "../models/course-model";
 /**
  * POST contest
  */
-export interface ContestPlayer {
-  firstName: string
-  lastName: string
-  club: string
-  ghin: string
+ export interface ContestTeam {
+  playerIds: string[]
+  name: string
 }
 
- export interface Contest {
+export interface ContestPlayer {
+  playerId: string
+}
+
+export interface Contest {
   numMatches: number
   name: string
   course: CourseSearchView
-  participants: ContestPlayer[]
+  players: ContestPlayer[]
+  teams: ContestTeam[]
   participantType: ParticipantTypes
   resultType: ResultTypes
   scoringType: ScoringTypes
@@ -131,10 +134,17 @@ const contestRouter: FastifyPluginCallback = async (server) => {
         const { user: { userId }, query: { view, types } } = req;
         logger.info(types)
         const contests = await contestHandler.getUserContests(userId, types.split(',') as ContestTypes[], view);
-        rep.send({ success: true, data: { contests } })
+        logger.info('success GET /contests')
+        return { 
+          success: true, 
+          data: { contests } 
+        }
       } catch (e) {
         logger.error('error POST /contest', e)
-        rep.send({ success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' })
+        return { 
+          success: false, 
+          errorMessage: e instanceof Error ? e.message : 'An error occurred' 
+        }
       }
     }
   })
@@ -148,6 +158,7 @@ const contestRouter: FastifyPluginCallback = async (server) => {
       try {
         const { params: { contestId } } = req;
         const contest = await contestHandler.getChildContests(contestId);
+        logger.info('success GET /contests/:contestId/children', contestId)
         return {
           success: true,
           data: {
@@ -155,7 +166,7 @@ const contestRouter: FastifyPluginCallback = async (server) => {
           }
         }
       } catch (e) {
-        logger.error('error POST /contest', e)
+        logger.error('error POST /contests/:contestId/children', e)
         return {
           success: false,
           errorMessage: e instanceof Error ? e.message : 'An error occurred' 
