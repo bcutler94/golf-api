@@ -2,9 +2,9 @@ import { Db, MongoClient } from "mongodb";
 import logger from "../util/logger";
 
 // Replace the uri string with your MongoDB deployment's connection string.
-export const uri = process.env.DATABASE_URL || 'mongodb://127.0.0.1:27017';
+export const uri = process.env.DATABASE_URL || 'mongodb://localhost:27017?replicaSet=rs0';
 
-let db: Db;
+let client: MongoClient;
 
 const connect = async (): Promise<MongoClient> => { 
   const client = new MongoClient(uri);
@@ -21,11 +21,15 @@ const connect = async (): Promise<MongoClient> => {
 const GOLF_DB = process.env.GOLF_DB || 'golf-db';
 
 const getGolfDB = async (): Promise<Db> => {
-  if (db) return db;
-  const client = await connect()
+  const client = await getClient()
+  return client.db(GOLF_DB)
+}
+
+const getClient = async (): Promise<MongoClient> => {
+  if (client) return client;
+  client = await connect()
   logger.info('connected to db')
-  db = client.db(GOLF_DB);
-  return db
+  return client;
 }
 
 const startDB = async () => {
@@ -34,5 +38,6 @@ const startDB = async () => {
 
 export default {
   startDB,
-  getGolfDB
+  getGolfDB,
+  getClient
 }

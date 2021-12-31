@@ -1,6 +1,9 @@
 import { v4 } from "uuid"
+import database from "../data-layer/database";
 import contestModel, { ChildContest, ContestModelObject, ContestTypes, ContestViews, ContestViewTypes, ContestWithChildren, ParentContest, ParticipantTypes, ResultTypes, SingleContest} from "../models/contest-model"
+import scorecardModel, { ScorecardModel } from "../models/scorecard-model";
 import { Contest } from "../routers/contest-router"
+import logger from "../util/logger";
 
 const createContests = async (userId: string, contests: Contest[]) => {
 
@@ -81,9 +84,80 @@ const getChildContests = async (contestId: string): Promise<ContestWithChildren>
   return contestWithChildren
 }
 
+const startContest = async (contestId: string): Promise<void> => {
+  const client = await database.getClient();
+  const session = client.startSession();
+  try {
+    // this doesn't need to be transaction but i thought it might have to be so im just leaving this for now
+    await session.withTransaction( async () => {
+
+      const contestCollection = await contestModel.getContestCollection();
+
+      // get contest status to make sure we can do shit with it
+      const contest = await contestCollection.findOne({ id: contestId }, { session })
+      if (!contest) {
+        logger.error(`this contest [${contestId}] doesn't exist`)
+        await session.abortTransaction()
+        return null;
+      }
+      if (contest.status !== 'queued') {
+        logger.error(`this contest [${contestId}] doesnt't have a status of queued so we can't start it`)
+        await session.abortTransaction()
+        return null;
+      }
+      if (contest.type === 'parent') {
+        logger.error(`this contest [${contestId}] can't start because it's a parent contest`)
+        await session.abortTransaction()
+        return null;
+      }
+
+      if (contest.type === 'child') {
+        // make parent contest active
+        const { modifiedCount } = await contestCollection.updateOne({ id: contest.parentContestId }, { $set: { status: 'active' } }, { session });
+        if (!modifiedCount) {
+          await session.abortTransaction();
+          logger.info(`this contest [${contestId}] error when updating the status`)
+          return null
+        }
+      }
+      // make contest active
+      const { modifiedCount } = await contestCollection.updateOne({ id: contestId }, { $set: { status: 'active' } }, { session });
+      if (!modifiedCount) {
+        await session.abortTransaction();
+        logger.info(`this contest [${contestId}] error when updating the status`)
+        return null
+      }
+
+    });
+  } catch (e) {
+    logger.error('there was an error committing session to create contest', e);
+    throw e
+  } finally {
+    await session.endSession()
+  }
+}
+
+const getScorecard = async (contestId: string, userId: string): Promise<ScorecardModel | null> => {
+  return await scorecardModel.getScorecard(contestId, userId)
+}
+
+const createScorecard = async (contestId: string, userId: string): Promise<ScorecardModel> => {
+  const scorecardInput: ScorecardModel = {
+    id: v4(),
+    participantId: userId,
+    type: 'individual',
+    contestId,
+    scores: []
+  }
+  return await scorecardModel.createScorecard(scorecardInput)
+}
+
 export default {
   createContests,
   getContest,
   getUserContests,
-  getChildContests
+  getChildContests,
+  startContest,
+  getScorecard,
+  createScorecard
 }

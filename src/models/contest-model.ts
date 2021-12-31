@@ -2,6 +2,7 @@ import { WithId, Document, AggregationCursor } from 'mongodb';
 import { pipeline } from 'stream';
 import database from '../data-layer/database';
 import { ContestPlayer, ContestTeam } from '../routers/contest-router';
+import logger from '../util/logger';
 import { CourseModel } from './course-model';
 
 export const CONTEST_TYPES = [
@@ -197,8 +198,10 @@ const getUserContests = async <T extends ContestViewTypes>(userId: string, conte
         type: { $in: contestTypes },
         $or: [ 
           { adminId: { $eq: userId } }, 
-          { $expr: { $in: [ userId, '$teams.playerIds' ] } }, 
-          { $expr: { $eq: [ userId, '$players.playerId' ] } } 
+          { $expr: { $in: [ userId, { $ifNull: [ '$teams.playerId', [] ] } ] } },
+          { 'players.playerId': { $eq: userId } },
+          // { $in: [ userId, '$teams.playerIds' ] }, 
+          // { $eq: [ userId, '$players.playerId' ] } 
         ] 
       }
     },
@@ -263,6 +266,7 @@ const getChildContests = async (contestId: string): Promise<AggregationCursor<Co
 }
 
 export default {
+  getContestCollection,
   createContests,
   getContest,
   getUserContests,

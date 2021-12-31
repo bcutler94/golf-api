@@ -6,6 +6,7 @@ import contestSchema from "../schemas/contest-schema";
 import { APIResponse } from "../server";
 import logger from "../util/logger";
 import { CourseSearchView } from "../models/course-model";
+import { ScorecardModel } from "../models/scorecard-model";
 
 /**
  * POST contest
@@ -87,6 +88,46 @@ interface GETChildContests {
   Reply: APIResponse<GetContestWithChildrenReply>
 }
 
+/**
+ * POST start contest
+ */
+
+ interface PatchStartContestReply {}
+interface PATCHStartContest {
+  Params: {
+    contestId: string
+  },
+  Reply: APIResponse<PatchStartContestReply>
+}
+
+/**
+ * GET contest scorecards
+ */
+
+interface GetScorecardReply {
+  scorecard: ScorecardModel | null
+}
+interface GETContestScorecard {
+  Params: {
+    contestId: string
+  },
+  Reply: APIResponse<GetScorecardReply>
+}
+
+/**
+ * POST create contest scorecard
+ */
+interface PostScorecardReply {
+  scorecard: ScorecardModel
+}
+
+interface POSTContestScorecard {
+  Params: {
+    contestId: string
+  },
+  Reply: APIResponse<PostScorecardReply>
+}
+
 const contestRouter: FastifyPluginCallback = async (server) => {
 
   server.route<POSTContestRoute>({
@@ -97,7 +138,6 @@ const contestRouter: FastifyPluginCallback = async (server) => {
     handler: async (req, rep) => {
       try {
         const { body: { contests }, user: { userId } } = req;
-        logger.info(contests, req.body)
         await contestHandler.createContests(userId, contests);
         logger.info('success POST /contest', userId)
         return { data: {}, success: true }
@@ -132,7 +172,6 @@ const contestRouter: FastifyPluginCallback = async (server) => {
     handler: async (req, rep) => {
       try {
         const { user: { userId }, query: { view, types } } = req;
-        logger.info(types)
         const contests = await contestHandler.getUserContests(userId, types.split(',') as ContestTypes[], view);
         logger.info('success GET /contests')
         return { 
@@ -174,6 +213,80 @@ const contestRouter: FastifyPluginCallback = async (server) => {
       }
     }
   })
+
+  server.route<PATCHStartContest>({
+    method: 'PATCH',
+    url: '/contests/:contestId/start',
+    preValidation: [middleware.verifyUser],
+    schema: contestSchema.postStartContest.schema,
+    handler: async (req) => {
+      try {
+        const { params: { contestId } } = req;
+        await contestHandler.startContest(contestId);
+        logger.info('success POST /contest/:contestId/start', contestId)
+        return { data: {}, success: true }
+      } catch (e) {
+        logger.error('error POST /contest', e)
+        return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
+      }
+    }
+  });
+
+  server.route<GETContestScorecard>({
+    method: 'GET',
+    url: '/contests/:contestId/scorecard',
+    preValidation: [middleware.verifyUser],
+    schema: contestSchema.getContestScorecard.schema,
+    handler: async (req) => {
+      try {
+        const { params: { contestId }, user: { userId } } = req;
+        const scorecard = await contestHandler.getScorecard(contestId, userId)
+        logger.info('success GET /contests/:contestId/scorecard', contestId, userId)
+        return {
+          success: true,
+          data: {
+            scorecard
+          }
+        }
+      } catch (e) {
+        logger.error('error GET /contests/:contestId/scorecard', e)
+        return {
+          success: false,
+          errorMessage: e instanceof Error ? e.message : 'An error occurred' 
+        }
+      }
+    }
+  })
+
+  server.route<POSTContestScorecard>({
+    method: 'POST',
+    url: '/contests/:contestId/scorecard',
+    preValidation: [middleware.verifyUser],
+    schema: contestSchema.postContestScorecard.schema,
+    handler: async (req) => {
+      try {
+        const { params: { contestId }, user: { userId } } = req;
+        const scorecard = await contestHandler.createScorecard(contestId, userId)
+        logger.info('success POST /contests/:contestId/scorecard', contestId, userId)
+        return {
+          success: true,
+          data: {
+            scorecard
+          }
+        }
+      } catch (e) {
+        logger.error('error POST /contests/:contestId/scorecard', e)
+        return {
+          success: false,
+          errorMessage: e instanceof Error ? e.message : 'An error occurred' 
+        }
+      }
+    }
+  })
+
+
+
+
 
 }
 

@@ -4,11 +4,9 @@ import jwt from 'fastify-jwt';
 import logger from './util/logger';
 import userRouter from './routers/user-router';
 import contestRouter from './routers/contest-router';
-import hooks from './util/hooks';
 import database from './data-layer/database';
 import courseRouter from './routers/course-router';
 import playerRouter from './routers/players-router';
-import pubsub from './pubsub/pubsub';
 import throng from 'throng';
 
 interface SuccessResponse<JSON> {
@@ -55,7 +53,7 @@ server.register(contestRouter, { prefix: 'v1' })
 server.register(courseRouter, { prefix: 'v1' })
 
 /**
- * Player Route
+ * Player Router
  */
 server.register(playerRouter, { prefix: 'v1' })
 

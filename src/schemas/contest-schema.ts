@@ -144,10 +144,65 @@ const getChildContests: RouteShorthandOptions = {
   }
 }
 
+const postStartContest: RouteShorthandOptions = {
+  schema: {
+    headers: genericSchema.headerAuth,
+    params: {
+      type: 'object',
+      required: [ 'contestId' ],
+      maxProperties: 1,
+      properties: {
+        contestId: {
+          type: 'string',
+          format: 'uuid'
+        }
+      }
+    }
+  }
+}
+
+const getContestScorecard: RouteShorthandOptions = {
+  schema: {
+    headers: genericSchema.headerAuth,
+    params: {
+      type: 'object',
+      required: [ 'contestId' ],
+      maxProperties: 1,
+      properties: {
+        contestId: {
+          type: 'string',
+          format: 'uuid'
+        }
+      }
+    }
+  }
+}
+
+const postContestScorecard: RouteShorthandOptions = {
+  schema: {
+    headers: genericSchema.headerAuth,
+    params: {
+      type: 'object',
+      required: [ 'contestId' ],
+      maxProperties: 1,
+      properties: {
+        contestId: {
+          type: 'string',
+          format: 'uuid'
+        }
+      }
+    }
+  }
+}
+
+
 
 export default {
   postContests,
   get,
   getUserContests,
-  getChildContests
+  getChildContests,
+  postStartContest,
+  getContestScorecard,
+  postContestScorecard
 }
