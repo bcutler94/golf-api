@@ -16,6 +16,10 @@ export interface ScorecardModel {
   participantId: string // teamId or playerId/userId
   contestId: string
   scores: HoleScore[]
+  courseId: string
+  tees: string | null
+  gender: string | null
+  courseHandicap: number | null
 }
 
 
@@ -33,36 +37,35 @@ const getScorecard = async (contestId: string, userId: string): Promise<Scorecar
 
 const createScorecard = async (scorecardInput: ScorecardModel): Promise<ScorecardModel> => {
   const { participantId, contestId } = scorecardInput;
-  const client = await database.getClient();
-  const session = client.startSession();
-  try {
-    return await session.withTransaction(async () => {
-      const collection = await getScorecardCollection();
-      const scorecard = await collection.findOne({ participantId, contestId }, { session });
-      if (scorecard) {
-        logger.error(`a scorecard already exists for contestId [${contestId}] participantId [${participantId}]`);
-        await session.abortTransaction()
-        return scorecard;
-      }
-      const { acknowledged } = await collection.insertOne(scorecardInput, { session })
-      if (!acknowledged) {
-        logger.error(`error creating scorecard for contestId [${contestId}] participantId [${participantId}]`)
-        await session.abortTransaction()
-        throw new Error ('There was an error creating your scorecard for the contest. Please try again later')
-      }
-      return scorecardInput;
-    });
-  } catch (e) {
-    logger.error('there was an error with scorecard creation transaction', e)
-    throw e
-  } finally {
-    await session.endSession()
+  const collection = await getScorecardCollection();
+  const scorecard = await collection.findOne({ participantId, contestId });
+  if (scorecard) {
+    logger.error(`a scorecard already exists for contestId [${contestId}] participantId [${participantId}]`);
+    return scorecard;
   }
+  const { acknowledged } = await collection.insertOne(scorecardInput)
+  if (!acknowledged) {
+    logger.error(`error creating scorecard for contestId [${contestId}] participantId [${participantId}]`)
+    throw new Error ('There was an error creating your scorecard for the contest. Please try again later')
+  }
+  return scorecardInput;
+}
+
+// do we care about people updating tees mid round? dont think so
+const setTees = async (scorecardId: string, tees: string, gender: string): Promise<ScorecardModel> => {
+  const collection = await getScorecardCollection();
+  const { value } = await collection.findOneAndUpdate({ id: scorecardId }, { $set: { tees, gender } }, { returnDocument: 'after' });
+  if (!value) {
+    logger.error('couldnt find and/or update scorecard tees')
+    throw new Error ('There was an error updating your scorecard. Please try again later.')
+  }
+  return value;
 }
 
 
 export default {
   getScorecardCollection,
   getScorecard,
-  createScorecard
+  createScorecard,
+  setTees
 }

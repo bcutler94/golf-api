@@ -1,6 +1,7 @@
 import { v4 } from "uuid"
 import database from "../data-layer/database";
 import contestModel, { ChildContest, ContestModelObject, ContestTypes, ContestViews, ContestViewTypes, ContestWithChildren, ParentContest, ParticipantTypes, ResultTypes, SingleContest} from "../models/contest-model"
+import { CourseModel } from "../models/course-model";
 import scorecardModel, { ScorecardModel } from "../models/scorecard-model";
 import { Contest } from "../routers/contest-router"
 import logger from "../util/logger";
@@ -111,7 +112,11 @@ const startContest = async (contestId: string): Promise<void> => {
         return null;
       }
 
+      
       if (contest.type === 'child') {
+
+        // TODO make sure that no other children contests are active
+
         // make parent contest active
         const { modifiedCount } = await contestCollection.updateOne({ id: contest.parentContestId }, { $set: { status: 'active' } }, { session });
         if (!modifiedCount) {
@@ -142,14 +147,23 @@ const getScorecard = async (contestId: string, userId: string): Promise<Scorecar
 }
 
 const createScorecard = async (contestId: string, userId: string): Promise<ScorecardModel> => {
+  const courseId = await contestModel.getCourseId(contestId);
   const scorecardInput: ScorecardModel = {
     id: v4(),
     participantId: userId,
     type: 'individual',
     contestId,
-    scores: []
+    scores: [],
+    tees: null,
+    courseHandicap: null,
+    gender: null,
+    courseId
   }
   return await scorecardModel.createScorecard(scorecardInput)
+}
+
+const getCourse = async (contestId: string): Promise<CourseModel> => {
+  return await contestModel.getContestCourse(contestId)
 }
 
 export default {
@@ -159,5 +173,6 @@ export default {
   getChildContests,
   startContest,
   getScorecard,
-  createScorecard
+  createScorecard,
+  getCourse
 }

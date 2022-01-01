@@ -4,7 +4,7 @@ import genericSchema from "./generic-schema"
 
 const MAX_CONTEST_PARTICIPANTS = 1000
 const MAX_CONTESTS = 10;
-const MAX_STRING_LENGTH = 100;
+export const MAX_STRING_LENGTH = 100;
 
 const postContests: RouteShorthandOptions = {
   schema: {
@@ -195,7 +195,22 @@ const postContestScorecard: RouteShorthandOptions = {
   }
 }
 
-
+const getContestCourse: RouteShorthandOptions = {
+  schema: {
+    headers: genericSchema.headerAuth,
+    params: {
+      type: 'object',
+      required: [ 'contestId' ],
+      maxProperties: 1,
+      properties: {
+        contestId: {
+          type: 'string',
+          format: 'uuid'
+        }
+      }
+    }
+  }
+}
 
 export default {
   postContests,
@@ -204,5 +219,6 @@ export default {
   getChildContests,
   postStartContest,
   getContestScorecard,
-  postContestScorecard
+  postContestScorecard,
+  getContestCourse,
 }

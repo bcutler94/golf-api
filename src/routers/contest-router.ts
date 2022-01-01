@@ -5,7 +5,7 @@ import middleware from "../util/middleware";
 import contestSchema from "../schemas/contest-schema";
 import { APIResponse } from "../server";
 import logger from "../util/logger";
-import { CourseSearchView } from "../models/course-model";
+import { CourseModel, CourseSearchView } from "../models/course-model";
 import { ScorecardModel } from "../models/scorecard-model";
 
 /**
@@ -127,6 +127,40 @@ interface POSTContestScorecard {
   },
   Reply: APIResponse<PostScorecardReply>
 }
+
+/**
+ * GET contest course
+ */
+interface GetContestCourseReply {
+  course: CourseModel
+}
+
+interface GETContestCourse {
+  Params: {
+    contestId: string
+  },
+  Reply: APIResponse<GetContestCourseReply>
+}
+
+/**
+ * PATCH select tees
+ */
+
+interface PatchContestScorecardTeesReply {
+  scorecard: ScorecardModel
+}
+
+interface PATCHContestScorecardTees {
+  Params: {
+    contestId: string
+    scorecardId: string
+  },
+  Body: {
+    tees: string
+  }
+  Reply: APIResponse<PatchContestScorecardTeesReply>
+}
+
 
 const contestRouter: FastifyPluginCallback = async (server) => {
 
@@ -267,7 +301,7 @@ const contestRouter: FastifyPluginCallback = async (server) => {
       try {
         const { params: { contestId }, user: { userId } } = req;
         const scorecard = await contestHandler.createScorecard(contestId, userId)
-        logger.info('success POST /contests/:contestId/scorecard', contestId, userId)
+        logger.info('success POST /contests/:contestId/scorecard', contestId, userId, scorecard)
         return {
           success: true,
           data: {
@@ -284,9 +318,31 @@ const contestRouter: FastifyPluginCallback = async (server) => {
     }
   })
 
-
-
-
+  server.route<GETContestCourse>({
+    method: 'GET',
+    url: '/contests/:contestId/course',
+    preValidation: [middleware.verifyUser],
+    schema: contestSchema.getContestScorecard.schema,
+    handler: async (req) => {
+      try {
+        const { params: { contestId } } = req;
+        const course = await contestHandler.getCourse(contestId)
+        logger.info('success GET /contests/:contestId/course', contestId)
+        return {
+          success: true,
+          data: {
+            course
+          }
+        }
+      } catch (e) {
+        logger.error('success GET /contests/:contestId/course', e)
+        return {
+          success: false,
+          errorMessage: e instanceof Error ? e.message : 'An error occurred' 
+        }
+      }
+    }
+  })
 
 }
 

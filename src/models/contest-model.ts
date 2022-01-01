@@ -1,5 +1,4 @@
 import { WithId, Document, AggregationCursor } from 'mongodb';
-import { pipeline } from 'stream';
 import database from '../data-layer/database';
 import { ContestPlayer, ContestTeam } from '../routers/contest-router';
 import logger from '../util/logger';
@@ -265,10 +264,57 @@ const getChildContests = async (contestId: string): Promise<AggregationCursor<Co
   return await collection.aggregate(addViewToPipeline(pipeline, 'withChildren'))
 }
 
+const getContestCourse = async (contestId: string): Promise<CourseModel> => {
+  const collection = await getContestCollection();
+  const [ { course } = { course: null } ] = await collection.aggregate<{ course: CourseModel | undefined }>([
+    {
+      '$match': {
+        'id': contestId,
+      }
+    }, {
+      '$lookup': {
+        'from': 'courses', 
+        'localField': 'courseId', 
+        'foreignField': 'id', 
+        'as': 'course'
+      }
+    }, {
+      '$project': {
+        '_id': 0, 
+        'course': {
+          '$first': '$course'
+        }
+      }
+    }
+  ]).toArray();
+  if (!course) {
+    logger.error(`there was an error trying to find contest course for contestId [${contestId}]`)
+    throw new Error ('There was an error retrieving course information. Please try again later.')
+  }
+  return course;
+}
+
+const getCourseId = async (contestId: string): Promise<string> => {
+  const collection = await getContestCollection();
+  const contest = await collection.findOne({ id: contestId }, { projection: { courseId: 1 }});
+  if (!contest) {
+    logger.error(`1) couldnt find courseId for contestId [${contestId}]`);
+    throw new Error ('A course does not exist for this contest. Please try again later. (1)')
+  }
+  if ('courseId' in contest) {
+    return contest.courseId
+  } else {
+    logger.error(`2) couldnt find courseId for contestId [${contestId}]`);
+    throw new Error ('A course does not exist for this contest. Please try again later. (2)')
+  }
+}
+
 export default {
   getContestCollection,
   createContests,
   getContest,
   getUserContests,
-  getChildContests
+  getChildContests,
+  getContestCourse,
+  getCourseId
 }

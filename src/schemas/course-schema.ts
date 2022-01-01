@@ -2,15 +2,13 @@ import { RouteShorthandOptions } from "fastify"
 import { COURSE_VIEWS } from "../models/course-model";
 import genericSchema from "./generic-schema"
 
-const getQueryStringRequiredKeys = [ 'search', 'view' ];
-
 const get: RouteShorthandOptions = {
   schema: {
     headers: genericSchema.headerAuth,
     querystring: {
       type: 'object',
       maxProperties: 25,
-      required: getQueryStringRequiredKeys,
+      required: [ 'search', 'view' ],
       properties: {
         search: { 
           type: 'string',
@@ -24,6 +22,24 @@ const get: RouteShorthandOptions = {
   }
 }
 
+const getTees: RouteShorthandOptions = {
+  schema: {
+    headers: genericSchema.headerAuth,
+    params: {
+      type: 'object',
+      maxProperties: 1,
+      required: [ 'courseId' ],
+      properties: {
+        courseId: { 
+          type: 'string',
+          format: 'uuid',
+        },
+      }
+    },
+  }
+}
+
 export default {
-  get
+  get,
+  getTees
 }

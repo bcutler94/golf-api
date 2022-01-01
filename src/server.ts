@@ -8,6 +8,7 @@ import database from './data-layer/database';
 import courseRouter from './routers/course-router';
 import playerRouter from './routers/players-router';
 import throng from 'throng';
+import scorecardRouter from './routers/scorecard-router';
 
 interface SuccessResponse<JSON> {
   success: true
@@ -57,6 +58,10 @@ server.register(courseRouter, { prefix: 'v1' })
  */
 server.register(playerRouter, { prefix: 'v1' })
 
+/**
+ * Scorecard Router
+ */
+server.register(scorecardRouter, { prefix: 'v1' })
 
 const start = async () => {
   await database.startDB();

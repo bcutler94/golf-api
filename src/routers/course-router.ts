@@ -1,5 +1,5 @@
 import { FastifyPluginCallback } from "fastify";
-import { CourseViews, CourseViewTypes } from "../models/course-model";
+import { CourseTeeView, CourseViews, CourseViewTypes } from "../models/course-model";
 import courseHandler from "../route-handlers/course-handler";
 import middleware from "../util/middleware";
 import courseSchema from "../schemas/course-schema";
@@ -7,7 +7,7 @@ import { APIResponse } from "../server";
 import logger from "../util/logger";
 
 /**
- * GET
+ * GET search courses
  */
 
 type GetCourseResponse = Array<CourseViews[CourseViewTypes]>
@@ -19,6 +19,20 @@ interface GETCoursesRoute {
   Reply: APIResponse<GetCourseResponse>
 }
 
+/**
+ * GET course tees
+ */
+interface GetCourseTeesResponse {
+  course: CourseTeeView
+}
+interface GETCourseTeeRoute {
+  Params: {
+    courseId: string
+  }
+  Reply: APIResponse<GetCourseTeesResponse>
+}
+ 
+
 const courseRouter: FastifyPluginCallback = async (server) => {
 
   server.route<GETCoursesRoute>({
@@ -29,11 +43,30 @@ const courseRouter: FastifyPluginCallback = async (server) => {
     handler: async (req, rep) => {
       try {
         const { query: { search, view } } = req;
-        const courses = await courseHandler.getCourse(search, view)
-        rep.send({ success: true, data: courses })
+        const courses = await courseHandler.getCourse(search, view);
+        logger.info('success GET /courses', search, view)
+        return { success: true, data: courses }
       } catch (e) {
         logger.error('error GET /courses', e)
-        rep.send({ success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' })
+        return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
+      }
+    }
+  })
+
+  server.route<GETCourseTeeRoute>({
+    method: 'GET',
+    url: '/courses/:courseId/tees',
+    preValidation: [middleware.verifyUser],
+    schema: courseSchema.getTees.schema,
+    handler: async (req) => {
+      try {
+        const { params: { courseId } } = req;
+        const course = await courseHandler.getTees(courseId)
+        logger.info('success GET /courses/:courseId/tees', courseId)
+        return { success: true, data: { course } }
+      } catch (e) {
+        logger.error('error GET /courses/:courseId/tees', e)
+        return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
       }
     }
   })
