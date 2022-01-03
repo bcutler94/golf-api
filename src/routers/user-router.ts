@@ -56,7 +56,9 @@ const userRouter: FastifyPluginCallback = async (server, opts, done) => {
     preValidation: [middleware.verifyUser],
     handler: async (req, rep) => {
       try {
-        const user = await userHander.getUser(req.user.userId)
+        const { user: { userId } } = req;
+        logger.info('userId', userId)
+        const user = await userHander.getUser(userId)
         logger.info('got user', user.id)
         rep.send({ success: true, data: user });
       } catch (e) {

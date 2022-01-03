@@ -7,12 +7,12 @@ interface HoleScore {
   grossStrokes: number
   netStrokes: number
   holeNumber: number
-  scorerIds: string
 }
 
+type ScorecardType = 'team' | 'player'
 export interface ScorecardModel {
   id: string
-  type: ParticipantTypes
+  type: ScorecardType
   participantId: string // teamId or playerId/userId
   contestId: string
   scores: HoleScore[]

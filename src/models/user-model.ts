@@ -23,8 +23,9 @@ const getUserCollection = async () => {
 
 const createUser = async (user: UserModel): Promise<UserModel> => {
   const collection = await getUserCollection()
+
   const checkIfUserExists = await collection.findOne({ ghin: user.ghin });
-  if (checkIfUserExists) return user;
+  if (checkIfUserExists) return checkIfUserExists;
   const { acknowledged } = await collection.insertOne(user);
   if (acknowledged) return user;
   throw new Error ('There was an error creating the user [model]')
@@ -32,7 +33,7 @@ const createUser = async (user: UserModel): Promise<UserModel> => {
 
 const getUser = async (userId: string): Promise<UserModel> => {
   const collection = await getUserCollection()
-  const user = await collection.findOne({ userId });
+  const user = await collection.findOne({ id: userId  });
   if (!user) throw new Error (`Cant find userId: [${userId}]`);
   return user;
 }

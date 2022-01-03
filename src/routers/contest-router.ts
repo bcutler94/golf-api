@@ -1,61 +1,21 @@
 import { FastifyPluginCallback } from "fastify";
-import { ContestModel, ContestTypes, ContestViews, ContestViewTypes, ContestWithChildren, ParticipantTypes, ResultTypes, ScoringTypes } from "../models/contest-model";
-import contestHandler from "../route-handlers/contest-handler";
+import { ContestModel } from "../models/contest-model";
+import contestHandler, { ContestCreation } from "../route-handlers/contest-handler";
 import middleware from "../util/middleware";
 import contestSchema from "../schemas/contest-schema";
 import { APIResponse } from "../server";
 import logger from "../util/logger";
-import { CourseModel, CourseSearchView } from "../models/course-model";
+import { CourseModel } from "../models/course-model";
 import { ScorecardModel } from "../models/scorecard-model";
 
 /**
- * POST contest
+ * POST create contests
  */
- export interface ContestTeam {
-  playerIds: string[]
-  name: string
-}
-
-export interface ContestPlayer {
-  playerId: string
-}
-
-export interface Contest {
-  numMatches: number
-  name: string
-  course: CourseSearchView
-  players: ContestPlayer[]
-  teams: ContestTeam[]
-  participantType: ParticipantTypes
-  resultType: ResultTypes
-  scoringType: ScoringTypes
-}
-export interface PostContestBody {
-  contests: Contest[]
-}
-
-interface PostContestReply {}
-
-export interface POSTContestRoute {
-  Body: PostContestBody
-  Reply: APIResponse<PostContestReply>
-}
-
-/**
- * GET contest
- */
- interface GetContestParams {
-  contestId: string
-}
-
-interface GetContestReply {
-  contest: ContestModel
-}
-interface GETContestRoute {
-  Params: {
-    contestId: string
-  },
-  Reply: APIResponse<GetContestReply>
+interface POSTContests {
+  Body: {
+    contests: ContestCreation[]
+  }
+  Reply: APIResponse<{ contests: ContestModel[] }>
 }
 
 /**
@@ -63,140 +23,114 @@ interface GETContestRoute {
  */
 
 interface GetUserContestReply {
-  contests: ContestViews[ContestViewTypes][]
+  contests: ContestModel[]
 }
 interface GETUserContests {
-  Querystring: {
-    search: string
-    types: string
-    view: ContestViewTypes
-  }
   Reply: APIResponse<GetUserContestReply>
 }
 
 /**
- * GET child contests
+ * GET ryder cup contests
  */
 
-interface GetContestWithChildrenReply { 
-  contest: ContestWithChildren 
+interface GetRyderCupContests { 
+  contest: ContestModel[] 
 }
-interface GETChildContests {
+interface GETRyderCupContests {
   Params: {
-    contestId: string
+    ryderCupContestId: string
   },
-  Reply: APIResponse<GetContestWithChildrenReply>
+  Reply: APIResponse<GetRyderCupContests>
 }
 
 /**
  * POST start contest
  */
 
- interface PatchStartContestReply {}
-interface PATCHStartContest {
-  Params: {
-    contestId: string
-  },
-  Reply: APIResponse<PatchStartContestReply>
-}
+//  interface PatchStartContestReply {}
+// interface PATCHStartContest {
+//   Params: {
+//     contestId: string
+//   },
+//   Reply: APIResponse<PatchStartContestReply>
+// }
 
 /**
  * GET contest scorecards
  */
 
-interface GetScorecardReply {
-  scorecard: ScorecardModel | null
-}
-interface GETContestScorecard {
-  Params: {
-    contestId: string
-  },
-  Reply: APIResponse<GetScorecardReply>
-}
+// interface GetScorecardReply {
+//   scorecard: ScorecardModel | null
+// }
+// interface GETContestScorecard {
+//   Params: {
+//     contestId: string
+//   },
+//   Reply: APIResponse<GetScorecardReply>
+// }
 
 /**
  * POST create contest scorecard
  */
-interface PostScorecardReply {
-  scorecard: ScorecardModel
-}
+// interface PostScorecardReply {
+//   scorecard: ScorecardModel
+// }
 
-interface POSTContestScorecard {
-  Params: {
-    contestId: string
-  },
-  Reply: APIResponse<PostScorecardReply>
-}
+// interface POSTContestScorecard {
+//   Params: {
+//     contestId: string
+//   },
+//   Reply: APIResponse<PostScorecardReply>
+// }
 
 /**
  * GET contest course
  */
-interface GetContestCourseReply {
-  course: CourseModel
-}
+// interface GetContestCourseReply {
+//   course: CourseModel
+// }
 
-interface GETContestCourse {
-  Params: {
-    contestId: string
-  },
-  Reply: APIResponse<GetContestCourseReply>
-}
+// interface GETContestCourse {
+//   Params: {
+//     contestId: string
+//   },
+//   Reply: APIResponse<GetContestCourseReply>
+// }
 
 /**
- * PATCH select tees
+ * PATCH join a team on contest
  */
 
-interface PatchContestScorecardTeesReply {
-  scorecard: ScorecardModel
-}
-
-interface PATCHContestScorecardTees {
-  Params: {
-    contestId: string
-    scorecardId: string
-  },
-  Body: {
-    tees: string
-  }
-  Reply: APIResponse<PatchContestScorecardTeesReply>
-}
+// interface PATCHContestTeamJoin {
+//   Body: {
+//     teamName: string
+//   }
+//   Params: {
+//     contestId: string
+//   }
+//   Reply: APIResponse<{ contest: ContestWithChildren }>
+// }
 
 
 const contestRouter: FastifyPluginCallback = async (server) => {
 
-  server.route<POSTContestRoute>({
+  server.route<POSTContests>({
     method: 'POST',
     url: '/contest',
     preValidation: [middleware.verifyUser],
     schema: contestSchema.postContests.schema,
-    handler: async (req, rep) => {
+    handler: async (req) => {
       try {
         const { body: { contests }, user: { userId } } = req;
-        await contestHandler.createContests(userId, contests);
+        const contestModels = await contestHandler.createContests(userId, contests);
         logger.info('success POST /contest', userId)
-        return { data: {}, success: true }
+        return { data: { contests: contestModels }, success: true }
       } catch (e) {
         logger.error('error POST /contest', e)
         return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
       }
     }
   });
-
-  // server.route<GETContestRoute>({
-  //   method: 'GET',
-  //   url: '/contest/:contestId',
-  //   preValidation: [middleware.verifyUser],
-  //   handler: async (req, rep) => {
-  //     try {
-  //       const { params: { contestId } } = req;
-  //       const contest = await contestHandler.getContest(contestId);
-  //       rep.send({ success: true, data: { contest } })
-  //     } catch (e) {
-  //       logger.error('error POST /contest', e)
-  //       rep.send({ success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' })
-  //     }
-  //   }
-  // })
 
   server.route<GETUserContests>({
     method: 'GET',
@@ -205,8 +139,8 @@ const contestRouter: FastifyPluginCallback = async (server) => {
     schema: contestSchema.getUserContests.schema,
     handler: async (req, rep) => {
       try {
-        const { user: { userId }, query: { view, types } } = req;
-        const contests = await contestHandler.getUserContests(userId, types.split(',') as ContestTypes[], view);
+        const { user: { userId } } = req;
+        const contests = await contestHandler.getUserContests(userId)
         logger.info('success GET /contests')
         return { 
           success: true, 
@@ -222,127 +156,173 @@ const contestRouter: FastifyPluginCallback = async (server) => {
     }
   })
 
-  server.route<GETChildContests>({
-    method: 'GET',
-    url: '/contests/:contestId/children',
-    preValidation: [middleware.verifyUser],
-    schema: contestSchema.getChildContests.schema,
-    handler: async (req, rep) => {
-      try {
-        const { params: { contestId } } = req;
-        const contest = await contestHandler.getChildContests(contestId);
-        logger.info('success GET /contests/:contestId/children', contestId)
-        return {
-          success: true,
-          data: {
-            contest
-          }
-        }
-      } catch (e) {
-        logger.error('error POST /contests/:contestId/children', e)
-        return {
-          success: false,
-          errorMessage: e instanceof Error ? e.message : 'An error occurred' 
-        }
-      }
-    }
-  })
+  // server.route({
+  //   method: 'GET',
+  //   url: '/contests/stream',
+  //   preValidation: [middleware.verifyUser],
+  //   schema: contestSchema.getUserContests.schema,
+  //   handler: async (req, rep) => {
+  //     try {
+  //       const { user: { userId } } = req;
+  //       const contests = await contestHandler.getUserContestsStream(userId)
+  //       logger.info('success GET /contests')
+  //       contests.stream().on('data', (d) => {
+  //         rep.raw()
+  //       })
 
-  server.route<PATCHStartContest>({
-    method: 'PATCH',
-    url: '/contests/:contestId/start',
-    preValidation: [middleware.verifyUser],
-    schema: contestSchema.postStartContest.schema,
-    handler: async (req) => {
-      try {
-        const { params: { contestId } } = req;
-        await contestHandler.startContest(contestId);
-        logger.info('success POST /contest/:contestId/start', contestId)
-        return { data: {}, success: true }
-      } catch (e) {
-        logger.error('error POST /contest', e)
-        return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
-      }
-    }
-  });
+  //       return { 
+  //         success: true, 
+  //         data: { contests } 
+  //       }
+  //     } catch (e) {
+  //       logger.error('error POST /contest', e)
+  //       return { 
+  //         success: false, 
+  //         errorMessage: e instanceof Error ? e.message : 'An error occurred' 
+  //       }
+  //     }
+  //   }
+  // })
 
-  server.route<GETContestScorecard>({
-    method: 'GET',
-    url: '/contests/:contestId/scorecard',
-    preValidation: [middleware.verifyUser],
-    schema: contestSchema.getContestScorecard.schema,
-    handler: async (req) => {
-      try {
-        const { params: { contestId }, user: { userId } } = req;
-        const scorecard = await contestHandler.getScorecard(contestId, userId)
-        logger.info('success GET /contests/:contestId/scorecard', contestId, userId)
-        return {
-          success: true,
-          data: {
-            scorecard
-          }
-        }
-      } catch (e) {
-        logger.error('error GET /contests/:contestId/scorecard', e)
-        return {
-          success: false,
-          errorMessage: e instanceof Error ? e.message : 'An error occurred' 
-        }
-      }
-    }
-  })
+  // server.route<GETRyderCupContests>({
+  //   method: 'GET',
+  //   url: '/contests/:ryderCupContestId/ryderCup',
+  //   preValidation: [middleware.verifyUser],
+  //   schema: contestSchema.getChildContests.schema,
+  //   handler: async (req, rep) => {
+  //     try {
+  //       const { params: { ryderCupContestId } } = req;
+  //       const contest = await contestHandler.getRyderCupContests(ryderCupContestId);
+  //       logger.info('success GET /contests/:contestId/children', ryderCupContestId)
+  //       return {
+  //         success: true,
+  //         data: {
+  //           contest
+  //         }
+  //       }
+  //     } catch (e) {
+  //       logger.error('error POST /contests/:contestId/children', e)
+  //       return {
+  //         success: false,
+  //         errorMessage: e instanceof Error ? e.message : 'An error occurred' 
+  //       }
+  //     }
+  //   }
+  // })
 
-  server.route<POSTContestScorecard>({
-    method: 'POST',
-    url: '/contests/:contestId/scorecard',
-    preValidation: [middleware.verifyUser],
-    schema: contestSchema.postContestScorecard.schema,
-    handler: async (req) => {
-      try {
-        const { params: { contestId }, user: { userId } } = req;
-        const scorecard = await contestHandler.createScorecard(contestId, userId)
-        logger.info('success POST /contests/:contestId/scorecard', contestId, userId, scorecard)
-        return {
-          success: true,
-          data: {
-            scorecard
-          }
-        }
-      } catch (e) {
-        logger.error('error POST /contests/:contestId/scorecard', e)
-        return {
-          success: false,
-          errorMessage: e instanceof Error ? e.message : 'An error occurred' 
-        }
-      }
-    }
-  })
+  // server.route<PATCHStartContest>({
+  //   method: 'PATCH',
+  //   url: '/contests/:contestId/start',
+  //   preValidation: [middleware.verifyUser],
+  //   schema: contestSchema.postStartContest.schema,
+  //   handler: async (req) => {
+  //     try {
+  //       const { params: { contestId } } = req;
+  //       await contestHandler.startContest(contestId);
+  //       logger.info('success POST /contest/:contestId/start', contestId)
+  //       return { data: {}, success: true }
+  //     } catch (e) {
+  //       logger.error('error POST /contest', e)
+  //       return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
+  //     }
+  //   }
+  // });
 
-  server.route<GETContestCourse>({
-    method: 'GET',
-    url: '/contests/:contestId/course',
-    preValidation: [middleware.verifyUser],
-    schema: contestSchema.getContestScorecard.schema,
-    handler: async (req) => {
-      try {
-        const { params: { contestId } } = req;
-        const course = await contestHandler.getCourse(contestId)
-        logger.info('success GET /contests/:contestId/course', contestId)
-        return {
-          success: true,
-          data: {
-            course
-          }
-        }
-      } catch (e) {
-        logger.error('success GET /contests/:contestId/course', e)
-        return {
-          success: false,
-          errorMessage: e instanceof Error ? e.message : 'An error occurred' 
-        }
-      }
-    }
-  })
+  // server.route<GETContestScorecard>({
+  //   method: 'GET',
+  //   url: '/contests/:contestId/scorecard',
+  //   preValidation: [middleware.verifyUser],
+  //   schema: contestSchema.getContestScorecard.schema,
+  //   handler: async (req) => {
+  //     try {
+  //       const { params: { contestId }, user: { userId } } = req;
+  //       const scorecard = await contestHandler.getScorecard(contestId, userId)
+  //       logger.info('success GET /contests/:contestId/scorecard', contestId, userId)
+  //       return {
+  //         success: true,
+  //         data: {
+  //           scorecard
+  //         }
+  //       }
+  //     } catch (e) {
+  //       logger.error('error GET /contests/:contestId/scorecard', e)
+  //       return {
+  //         success: false,
+  //         errorMessage: e instanceof Error ? e.message : 'An error occurred' 
+  //       }
+  //     }
+  //   }
+  // })
+
+  // server.route<POSTContestScorecard>({
+  //   method: 'POST',
+  //   url: '/contests/:contestId/scorecard',
+  //   preValidation: [middleware.verifyUser],
+  //   schema: contestSchema.postContestScorecard.schema,
+  //   handler: async (req) => {
+  //     try {
+  //       const { params: { contestId }, user: { userId } } = req;
+  //       const scorecard = await contestHandler.createScorecard(contestId, userId)
+  //       logger.info('success POST /contests/:contestId/scorecard', contestId, userId, scorecard)
+  //       return {
+  //         success: true,
+  //         data: {
+  //           scorecard
+  //         }
+  //       }
+  //     } catch (e) {
+  //       logger.error('error POST /contests/:contestId/scorecard', e)
+  //       return {
+  //         success: false,
+  //         errorMessage: e instanceof Error ? e.message : 'An error occurred' 
+  //       }
+  //     }
+  //   }
+  // })
+
+  // server.route<GETContestCourse>({
+  //   method: 'GET',
+  //   url: '/contests/:contestId/course',
+  //   preValidation: [middleware.verifyUser],
+  //   schema: contestSchema.getContestScorecard.schema,
+  //   handler: async (req) => {
+  //     try {
+  //       const { params: { contestId } } = req;
+  //       const course = await contestHandler.getCourse(contestId)
+  //       logger.info('success GET /contests/:contestId/course', contestId)
+  //       return {
+  //         success: true,
+  //         data: {
+  //           course
+  //         }
+  //       }
+  //     } catch (e) {
+  //       logger.error('success GET /contests/:contestId/course', e)
+  //       return {
+  //         success: false,
+  //         errorMessage: e instanceof Error ? e.message : 'An error occurred' 
+  //       }
+  //     }
+  //   }
+  // })
+
+  // server.route<PATCHContestTeamJoin>({
+  //   method: 'PATCH',
+  //   url: '/contests/:contestId/join',
+  //   preValidation: [middleware.verifyUser],
+  //   schema: contestSchema.postStartContest.schema,
+  //   handler: async (req) => {
+  //     try {
+  //       const { params: { contestId }, body: { teamName }, user: { userId } } = req;
+  //       const contest = await contestHandler.joinContest(contestId, userId, teamName);
+  //       logger.info('success POST /contest/:contestId/start', contestId)
+  //       return { data: { contest }, success: true }
+  //     } catch (e) {
+  //       logger.error('error POST /contest', e)
+  //       return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
+  //     }
+  //   }
+  // });
 
 }
 

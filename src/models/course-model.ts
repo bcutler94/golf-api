@@ -69,7 +69,7 @@ export interface CourseModel {
 export type CourseModelObject = WithId<CourseModel>;
 
 
-export const getCourseCollection = async () => {
+const getCourseCollection = async () => {
   const db = await database.getGolfDB()
   return db.collection<CourseModel>('courses');
 }
@@ -77,6 +77,9 @@ export const getCourseCollection = async () => {
 const COURSE_INDEXES: IndexDescription[] = [
   {
     key: { fullName: 'text' }
+  },
+  {
+    key: { 'location.geo': '2dsphere' }
   }
 ]
 
@@ -154,5 +157,6 @@ const getTees = async (courseId: string): Promise<CourseTeeView> => {
 export default {
   createCourse,
   searchCourse,
-  getTees
+  getTees,
+  getCourseCollection
 }
