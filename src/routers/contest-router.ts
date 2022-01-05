@@ -21,12 +21,8 @@ interface POSTContests {
 /**
  * GET user contests
  */
-
-interface GetUserContestReply {
-  contests: ContestModel[]
-}
 interface GETUserContests {
-  Reply: APIResponse<GetUserContestReply>
+  Reply: APIResponse<{ contests: ContestModel[] }>
 }
 
 /**

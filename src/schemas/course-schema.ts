@@ -1,22 +1,37 @@
 import { RouteShorthandOptions } from "fastify"
-import { COURSE_VIEWS } from "../models/course-model";
 import genericSchema from "./generic-schema"
 
-const get: RouteShorthandOptions = {
+const search: RouteShorthandOptions = {
   schema: {
     headers: genericSchema.headerAuth,
-    querystring: {
+    params: {
       type: 'object',
-      maxProperties: 25,
-      required: [ 'search', 'view' ],
+      maxProperties: 1,
+      required: [ 'searchTerm' ],
       properties: {
-        search: { 
+        searchTerm: { 
           type: 'string',
           maxLength: 100,
         },
-        view: {
-          enum: [ ...COURSE_VIEWS ]
-        }
+      }
+    },
+  }
+}
+
+const geolocate: RouteShorthandOptions = {
+  schema: {
+    headers: genericSchema.headerAuth,
+    params: {
+      type: 'object',
+      maxProperties: 2,
+      required: [ 'lat', 'long' ],
+      properties: {
+        lat: { 
+          type: 'number',
+        },
+        long: { 
+          type: 'number',
+        },
       }
     },
   }
@@ -40,6 +55,7 @@ const getTees: RouteShorthandOptions = {
 }
 
 export default {
-  get,
+  search,
+  geolocate,
   getTees
 }

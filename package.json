@@ -12,7 +12,7 @@
     "worker": "npm run build:worker && node ./dist/worker.js | bunyan",
     "server": "npm run build:server && node ./dist/server.js | bunyan",
     "server:dev": "nodemon --exec 'npm run server' --ignore ./dist -e ts | bunyan",
-    "benchmark": "autocannon http://127.0.0.1:8080/v1/courses?search=pinehurst -d 30 -w 10 --headers Authorization='Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI1Y2Q1NzM0ZC05ZDNhLTQwZmItODhlNS03OTIzMzgwMzQwYWIiLCJpYXQiOjE2Mzg5Nzk2NjZ9.KTZzb7mszv1ki_8AONkAwy8gvjS60_zcn_DT7Ro24ak'",
+    "benchmark": "autocannon https://fierce-wildwood-27439.herokuapp.com/courses?search=pinehurst -d 30 -w 10 --headers Authorization='Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI1Y2Q1NzM0ZC05ZDNhLTQwZmItODhlNS03OTIzMzgwMzQwYWIiLCJpYXQiOjE2Mzg5Nzk2NjZ9.KTZzb7mszv1ki_8AONkAwy8gvjS60_zcn_DT7Ro24ak'",
     "monitor:db": "mongotop --uri mongodb+srv://bcutler94:Liverpool13@golf.hylhc.mongodb.net "
   },
   "author": "bcutler94",
