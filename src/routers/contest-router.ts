@@ -1,12 +1,10 @@
 import { FastifyPluginCallback } from "fastify";
-import { ContestModel } from "../models/contest-model";
+import { ContestModel, GetContest } from "../models/contest-model";
 import contestHandler, { ContestCreation } from "../route-handlers/contest-handler";
 import middleware from "../util/middleware";
 import contestSchema from "../schemas/contest-schema";
 import { APIResponse } from "../server";
 import logger from "../util/logger";
-import { CourseModel } from "../models/course-model";
-import { ScorecardModel } from "../models/scorecard-model";
 
 /**
  * POST create contests
@@ -26,18 +24,28 @@ interface GETUserContests {
 }
 
 /**
+ * GET contest
+ */
+
+interface GETContest {
+  Params: { contestId: string }
+  Reply: APIResponse<GetContest>
+}
+
+
+/**
  * GET ryder cup contests
  */
 
-interface GetRyderCupContests { 
-  contest: ContestModel[] 
-}
-interface GETRyderCupContests {
-  Params: {
-    ryderCupContestId: string
-  },
-  Reply: APIResponse<GetRyderCupContests>
-}
+// interface GetRyderCupContests { 
+//   contest: ContestModel[] 
+// }
+// interface GETRyderCupContests {
+//   Params: {
+//     ryderCupContestId: string
+//   },
+//   Reply: APIResponse<GetRyderCupContests>
+// }
 
 /**
  * POST start contest
@@ -144,6 +152,30 @@ const contestRouter: FastifyPluginCallback = async (server) => {
         }
       } catch (e) {
         logger.error('error POST /contest', e)
+        return { 
+          success: false, 
+          errorMessage: e instanceof Error ? e.message : 'An error occurred' 
+        }
+      }
+    }
+  })
+
+  server.route<GETContest>({
+    method: 'GET',
+    url: '/contests/:contestId',
+    preValidation: [middleware.verifyUser],
+    schema: contestSchema.getContest.schema,
+    handler: async (req) => {
+      try {
+        const { params: { contestId } } = req;
+        const data = await contestHandler.getContest(contestId)
+        logger.info('success GET /contests/:contestId')
+        return { 
+          success: true, 
+          data 
+        }
+      } catch (e) {
+        logger.error('error GET /contests/:contestId', e)
         return { 
           success: false, 
           errorMessage: e instanceof Error ? e.message : 'An error occurred' 

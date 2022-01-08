@@ -1,36 +1,39 @@
 import { AnyBulkWriteOperation, IndexSpecification } from "mongodb";
 import { v4 } from "uuid"
 import database from "../data-layer/database";
-import contestModel, { BestBallMatchPlay, ContestModel, ContestTypes, IndividualStrokePlay, RyderCupContest, ScoringTypes, SinglesMatchPlay } from "../models/contest-model"
+import contestModel, { BestBallMatchPlay, ContestModel, ContestTypes, GetContest, IndividualStrokePlay, RyderCupContest, ScoringTypes, SinglesMatchPlay } from "../models/contest-model"
 import { CourseModel } from "../models/course-model";
 import scorecardModel, { ScorecardModel } from "../models/scorecard-model";
 interface ContestCreationBase {
   type: ContestTypes
   name: string
 }
+
 interface RyderCupCreation extends ContestCreationBase {
   type: 'ryder-cup'
 }
-interface BestBallCreation extends ContestCreationBase {
-  type: 'best-ball-match-play'
-  courseId: string
-  scoringType: ScoringTypes
-  ryderCupContestId?: string
-}
-interface SinglesCreation extends ContestCreationBase {
-  type: 'singles-match-play'
-  courseId: string
-  scoringType: ScoringTypes
-  ryderCupContestId?: string
-}
-interface IndividualStrokeCreation extends ContestCreationBase {
+interface IndividualStrokePlayCreation extends ContestCreationBase {
   type: 'individual-stroke-play'
   courseId: string
   scoringType: ScoringTypes
   ryderCupContestId?: string
 }
 
-export type ContestCreation = RyderCupCreation | BestBallCreation | SinglesCreation | IndividualStrokeCreation
+interface BestBallMatchPlayCreation extends ContestCreationBase  {
+  type: 'best-ball-match-play'
+  courseId: string
+  scoringType: ScoringTypes
+  ryderCupContestId?: string
+}
+
+interface SingleMatchPlayCreation extends ContestCreationBase {
+  type: 'singles-match-play'
+  courseId: string
+  scoringType: ScoringTypes
+  ryderCupContestId?: string
+}
+
+export type ContestCreation =  RyderCupCreation | IndividualStrokePlayCreation | BestBallMatchPlayCreation | SingleMatchPlayCreation
 
 const createContests = async (userId: string, contests: ContestCreation[]) => {
 
@@ -48,7 +51,7 @@ const createContests = async (userId: string, contests: ContestCreation[]) => {
           leaderboardId: null
         }
         return ryderCupContest;
-      case 'best-ball-match-play':
+      case 'best-ball-match-play': {
         const bestBallContest: BestBallMatchPlay = {
           type: 'best-ball-match-play',
           teamMatchups: [],
@@ -62,6 +65,7 @@ const createContests = async (userId: string, contests: ContestCreation[]) => {
           ryderCupContestId: contest.ryderCupContestId
         }
         return bestBallContest;
+      }
       case 'singles-match-play':
         const singlesContest: SinglesMatchPlay = {
           type: 'singles-match-play',
@@ -96,100 +100,9 @@ const createContests = async (userId: string, contests: ContestCreation[]) => {
   return await contestModel.createContests(contestModels)
 }
 
-// const createIndividualStrokePlayContest = async ()
-
-
-
-// const createContests = async (userId: string, contests: Contest[]) => {
-
-//   const participants: Participants = {
-//     'ryder-cup': {
-//       homeTeam: {
-//         name: 'USA',
-//         captainId: '',
-//         playerIds: []
-//       },
-//       awayTeam: {
-//         name: 'EUROPE',
-//         captainId: '',
-//         playerIds: []
-//       }
-//     },
-//     'individual-stroke-play': {
-//       playerIds: []
-//     },
-//     'best-ball-match-play': {
-//       matchups: []
-//     },
-//     'singles-match-play': {
-//       matchups: []
-//     }
-//   }
-
-
-//   if (contests.length > 1) {
-
-//     const [ parentContest, ...childrenContests ] = contests;
-
-//     const parentContestId = v4();
-
-//     const parentContestInput: ContestModel<'ryder-cup'> = {
-//       type: 'parent',
-//       id: parentContestId,
-//       adminId: userId,
-//       name: parentContest.name,
-//       participantType: 'ryder-cup',
-//       participants: participants['ryder-cup'],
-//       childContestIds: [],
-//       status: 'queued',
-//       leaderboardId: null
-//     }
-
-//     const childrenContestInputs: ContestModel[] = childrenContests.map(contest => {
-//       const id = v4();
-//       parentContestInput.childContestIds?.push(id);
-//       return {
-//         type: 'child',
-//         id,
-//         status: 'queued',
-//         adminId: userId,
-//         courseId: contest.course.id,
-//         name: contest.name,
-//         parentContestId,
-//         participantType: parentContest.participantType,
-//         participants: participants[parentContest.participantType],
-//         scoringType: contest.scoringType,
-//         leaderboardId: null,
-//       }
-//     });
-
-//     return await contestModel.createContests([ parentContestInput, ...childrenContestInputs ])
-
-//   } else {
-
-//     const [ singleContest ] = contests;
-
-//     const singleContestInput: ContestModel<typeof singleContest.participantType> = {
-//       type: 'single',
-//       id: v4(),
-//       status: 'queued',
-//       adminId: userId,
-//       name: singleContest.name,
-//       courseId: singleContest.course.id,
-//       participantType: singleContest.participantType,
-//       participants: participants[singleContest.participantType],
-//       scoringType: singleContest.scoringType,
-//       leaderboardId: null,
-//     }
-
-//     return await contestModel.createContests([ singleContestInput ]);
-
-//   }
-// }
-
-// const getContest = async (contestId: string): Promise<ContestModelObject<ResultTypes, ParticipantTypes>> => {
-//   return await contestModel.getContest(contestId)
-// }
+const getContest = async (contestId: string): Promise<GetContest> => {
+  return await contestModel.getContest(contestId);
+}
 
 const getUserContests = async (userId: string): Promise<ContestModel[]> => {
   return await contestModel.getUserContests(userId);
@@ -317,7 +230,7 @@ const getCourse = async (contestId: string): Promise<CourseModel> => {
 
 export default {
   createContests,
-  // getContest,
+  getContest,
   getUserContests,
   // getChildContests,
   // startContest,

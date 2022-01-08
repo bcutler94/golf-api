@@ -2,7 +2,6 @@ import { RouteShorthandOptions } from "fastify"
 import { SCORING_TYPE } from "../models/contest-model"
 import genericSchema from "./generic-schema"
 
-const MAX_CONTEST_PARTICIPANTS = 1000
 const MAX_CONTESTS = 10;
 export const MAX_STRING_LENGTH = 100;
 
@@ -29,33 +28,6 @@ const postContests: RouteShorthandOptions = {
               scoringType: {
                 enum: [ ...SCORING_TYPE ]
               },
-              // participants: {
-              //   type: 'array',
-              //   maxLength: MAX_CONTEST_PARTICIPANTS,
-              //   items: {
-              //     type: 'object',
-              //     requiredProperties: [ 'fullName', 'firstName', 'lastName', 'clubName', 'id', 'currentHandicap', 'externalId', '_id' ],
-              //     maxProperties: 8,
-              //     properties: {
-              //       firstName: {
-              //         type: 'string',
-              //         maxLength: MAX_STRING_LENGTH
-              //       },
-              //       lastName: {
-              //         type: 'string',
-              //         maxLength: MAX_STRING_LENGTH
-              //       },
-              //       club: {
-              //         type: 'string',
-              //         maxLength: MAX_STRING_LENGTH
-              //       },
-              //       ghin: {
-              //         type: 'string',
-              //         maxLength: MAX_STRING_LENGTH
-              //       },
-              //     }
-              //   }
-              // },
               course: {
                 type: 'object',
                 requiredProperties: [ 'id', 'fullName', 'city', 'state' ],
@@ -87,17 +59,18 @@ const postContests: RouteShorthandOptions = {
   }
 }
 
-const getParamsRequiredKeys = ['contestId'];
-const get: RouteShorthandOptions = {
+const getContest: RouteShorthandOptions = {
   schema: {
     headers: genericSchema.headerAuth,
     params: {
       type: 'object',
-      required: getParamsRequiredKeys,
-      maxProperties: 25,
+      required: [ 'contestId' ],
+      maxProperties: 1,
       properties: {
-        type: 'string',
-        format: 'uuid'
+        contestId: {
+          type: 'string',
+          format: 'uuid'
+        }
       }
     }
   }
@@ -226,7 +199,7 @@ const patchContestTeam: RouteShorthandOptions = {
 
 export default {
   postContests,
-  get,
+  getContest,
   getUserContests,
   getChildContests,
   postStartContest,

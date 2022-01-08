@@ -3,6 +3,7 @@ import database from '../data-layer/database';
 import logger from '../util/logger';
 import { CourseModel } from './course-model';
 
+
 export const CONTEST_TYPES = [
   'ryder-cup',
   'individual-stroke-play',
@@ -21,6 +22,7 @@ export const SCORING_TYPE = [
   'gross',
   'net'
 ] as const;
+
 
 export type ContestTypes = typeof CONTEST_TYPES[number]
 
@@ -45,30 +47,32 @@ interface Team {
   userIds: string[]
 }
 
-export interface RyderCupContest extends BaseContest {
-  type: 'ryder-cup'
+export interface MultiDayContestBase extends BaseContest {
   contestIds: string[]
-  teams: Team[]
 }
 
-export interface IndividualStrokePlay extends BaseContest {
-  type: 'individual-stroke-play'
+export interface SingleDayContestBase extends BaseContest {
   courseId: string
   scoringType: ScoringTypes
-  userIds: string[]
   ryderCupContestId?: string
 }
 
+export interface RyderCupContest extends MultiDayContestBase {
+  type: 'ryder-cup'
+  teams: Team[]
+}
+
+export interface IndividualStrokePlay extends SingleDayContestBase {
+  type: 'individual-stroke-play'
+  userIds: string[]
+}
 interface TeamMatchup {
   teams: Team[]
 }
 
-export interface BestBallMatchPlay extends BaseContest {
+export interface BestBallMatchPlay extends SingleDayContestBase {
   type: 'best-ball-match-play'
-  courseId: string
-  scoringType: ScoringTypes
   teamMatchups: TeamMatchup[]
-  ryderCupContestId?: string
 }
 
 interface TeamPlayer { 
@@ -79,15 +83,15 @@ interface SingleMatchup {
   users: TeamPlayer[]
 }
 
-export interface SinglesMatchPlay extends BaseContest {
+export interface SinglesMatchPlay extends SingleDayContestBase {
   type: 'singles-match-play'
-  courseId: string
-  scoringType: ScoringTypes
   singleMatchups: SingleMatchup[]
-  ryderCupContestId?: string
 }
 
-export type ContestModel = SinglesMatchPlay | BestBallMatchPlay | IndividualStrokePlay | RyderCupContest
+type SingleDayContests = SinglesMatchPlay | BestBallMatchPlay | IndividualStrokePlay
+type MultiDayContests = RyderCupContest
+
+export type ContestModel = SingleDayContests | MultiDayContests
 
 const getContestCollection = async () => {
   const db = await database.getGolfDB()
@@ -117,6 +121,45 @@ const getUserContests = async (userId: string): Promise<ContestModel[]> => {
   }).toArray()
 }
 
+
+interface GetSingleDayContest {
+  contest: SingleDayContests
+}
+
+interface GetMultiDayContest {
+  contest: MultiDayContests
+  childContests: SingleDayContests[]
+}
+
+
+export type GetContest = GetSingleDayContest | GetMultiDayContest
+
+const getContest = async (contestId: string): Promise<GetContest> => {
+  const collection = await getContestCollection();
+  const [ contest ] = await collection.aggregate<GetContest | null>([
+    {
+      '$match': {
+        'id': contestId
+      }
+    }, {
+      '$project': {
+        'contest': '$$ROOT'
+      }
+    }, {
+      '$lookup': {
+        'from': 'contests', 
+        'localField': 'contest.id', 
+        'foreignField': 'ryderCupContestId', 
+        'as': 'childContests'
+      }
+    }
+  ]).toArray()
+  if (!contest) {
+    logger.error('couldnt find contest', contestId)
+    throw new Error ('couldnt find contest')
+  }
+  return contest;
+}
 
 const getRyderCupContests = async (ryderCupContestId: string): Promise<ContestModel[]> => {
   const collection = await getContestCollection();
@@ -178,6 +221,7 @@ export default {
   createContests,
   getUserContests,
   getContestCourse,
+  getContest,
   // getCourseId,
   getRyderCupContests,
 }
