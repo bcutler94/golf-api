@@ -4,6 +4,7 @@ import database from "../data-layer/database";
 import contestModel, { BestBallMatchPlay, ContestModel, ContestTypes, GetContest, IndividualStrokePlay, RyderCupContest, ScoringTypes, SinglesMatchPlay } from "../models/contest-model"
 import { CourseModel } from "../models/course-model";
 import scorecardModel, { ScorecardModel } from "../models/scorecard-model";
+import logger from "../util/logger";
 interface ContestCreationBase {
   type: ContestTypes
   name: string
@@ -43,7 +44,10 @@ const createContests = async (userId: string, contests: ContestCreation[]) => {
         const ryderCupContest: RyderCupContest = {
           type: 'ryder-cup',
           contestIds: [],
-          teams: [],
+          teams: [
+            { id: v4(), name: 'USA', captainId: '', userIds: [] },
+            { id: v4(), name: 'EUROPE', captainId: '', userIds: [] }
+          ],
           id: v4(),
           adminIds: [ userId ],
           name: contest.name,
@@ -108,9 +112,69 @@ const getUserContests = async (userId: string): Promise<ContestModel[]> => {
   return await contestModel.getUserContests(userId);
 }
 
-const getRyderCupContests = async (ryderCupContestId: string): Promise<ContestModel[]> => {
-  return await contestModel.getRyderCupContests(ryderCupContestId);
+const joinTeam = async (contestId: string, userId: string): Promise<GetContest> => {
+  const collection = await contestModel.getContestCollection();
+  const contest = await collection.findOne({ id: contestId });
+  if (!contest) {
+    logger.error('cant find contest when joining team', contestId, userId)
+    throw new Error ()
+  }
+  const { type } = contest;
+  switch (type) {
+    case 'ryder-cup':
+      const { teams } = contest;
+
+      // make sure not in any teams
+      for (const team of teams) {
+        if (team.userIds.includes(userId)) {
+          logger.error('this user is already in a team', contestId, userId)
+          throw new Error ()
+        }
+      }
+
+      // find min length
+      const smallestTeamInfo = teams.reduce((obj, team, index) => {
+        const min = Math.min(obj.min, team.userIds.length);
+        return {
+          min,
+          idx: min === team.userIds.length ? index : obj.idx
+        }
+      }, { min: 0, idx: -1 });
+
+      // add user to team
+      teams[smallestTeamInfo.idx].userIds.push(userId);
+
+      // if no captain, make captain
+      if (!teams[smallestTeamInfo.idx].captainId) {
+        teams[smallestTeamInfo.idx].captainId = userId
+      }
+
+      const { ok } = await collection.findOneAndUpdate({ id: contestId }, {
+        $set: {
+          teams: teams
+        }
+      });
+
+      if (!ok) {
+        logger.error('unable to update teams on ryder cup contest ', contestId, userId)
+        throw new Error()
+      }
+      
+    case 'individual-stroke-play':
+    case 'singles-match-play':
+    case 'best-ball-match-play':
+      // TODO
+      break;
+    default:
+      const n: never = type;
+  }
+
+  return await contestModel.getContest(contestId);
 }
+
+
+
+
 
 // const startContest = async (contestId: string): Promise<void> => {
 //   const client = await database.getClient();
@@ -189,9 +253,9 @@ const getScorecard = async (contestId: string, userId: string): Promise<Scorecar
 //   return await scorecardModel.createScorecard(scorecardInput)
 // }
 
-const getCourse = async (contestId: string): Promise<CourseModel> => {
-  return await contestModel.getContestCourse(contestId)
-}
+// const getCourse = async (contestId: string): Promise<CourseModel> => {
+//   return await contestModel.getContestCourse(contestId)
+// }
 
 // const joinContest = async (contestId: string, userId: string, teamName: string): Promise<ContestWithChildren> => {
 
@@ -232,12 +296,13 @@ export default {
   createContests,
   getContest,
   getUserContests,
+  joinTeam,
   // getChildContests,
   // startContest,
-  getScorecard,
+  // getScorecard,
   // createScorecard,
-  getCourse,
-  getRyderCupContests,
+  // getCourse,
+  // getRyderCupContests,
   // getUserContestsStream
-  // joinContest
+
 }

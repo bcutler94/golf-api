@@ -1,7 +1,7 @@
 import ghinGaxios from 'gaxios';
 import logger from '../util/logger';
 
-const GHIN_URL = 'https://api2.ghin.com/api/v1';
+const GHIN_URL = 'https://api.ghin.com/api/v1';
 const GHIN_EMAIL = 'bcutler94@gmail.com';
 const GHIN_PASSWORD = 'Liverpool13'
 
@@ -233,14 +233,14 @@ const getClubGolfers = async (clubId: string, page: number): Promise<GHINGolfer[
     const token = await login();
     const { data: { golfers } } = await ghinGaxios.request<GetClubGolfersResponse>({
       method: 'GET',
-      url: `/clubs/${clubId}/golfers.json?per_page=100&page=${page}`,
+      url: `/clubs/${clubId}/golfers.json?status=Active&per_page=100&page=${page}`,
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
     return golfers;
   } catch (e) {
-    logger.warn('there was an error getting golfers from GHIN API')
+    logger.warn('there was an error getting golfers from GHIN API', e)
     return null;
     // throw new Error ('There was an error searching for players, please try again later.')
   }

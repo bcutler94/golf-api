@@ -4,48 +4,27 @@ import userHander from "../route-handlers/user-hander";
 import userSchema from "../schemas/user-schema";
 import { APIResponse } from "../server";
 import logger from "../util/logger";
+import { UserModel } from "../models/user-model";
 
 /**
  * GET
  */
-  interface GetUserResponse {
-  id: string
-  ghin: string
-  groupIds: Array<string>
-  lastName: string
-  firstName: string
-  clubName: string
-  currentHandicap: number
-}
-
 interface GETUserRoute {
-  Reply: APIResponse<GetUserResponse>
+  Reply: APIResponse<{ user: UserModel }>
 }
-
 
 /**
  * POST
 */
-  interface PostUserBody {
+interface PostUserBody {
   ghin: string
   phoneNumber: string
   groupIds: Array<string>
   pushToken: string
 }
-
-interface PostUserResponse {
-  id: string
-  ghin: string
-  groupIds: Array<string>
-  lastName: string
-  firstName: string
-  clubName: string
-  currentHandicap: number
-  token: string
-}
   export interface POSTUserRoute {
     Body: PostUserBody
-    Reply: APIResponse<PostUserResponse>
+    Reply: APIResponse<{ user: UserModel, token: string }>
   }
 
 const userRouter: FastifyPluginCallback = async (server, opts, done) => {
@@ -60,7 +39,7 @@ const userRouter: FastifyPluginCallback = async (server, opts, done) => {
         logger.info('userId', userId)
         const user = await userHander.getUser(userId)
         logger.info('got user', user.id)
-        rep.send({ success: true, data: user });
+        rep.send({ success: true, data: { user } });
       } catch (e) {
         logger.error('error GET /user', e)
         rep.send({ success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' })
@@ -77,7 +56,7 @@ const userRouter: FastifyPluginCallback = async (server, opts, done) => {
         const { body } = req;
         const user = await userHander.createUser(body);
         const token = server.jwt.sign({ userId: user.id });
-        rep.send({ success: true, data: { ...user, token } });
+        rep.send({ success: true, data: { user, token } });
       } catch (e) {
         logger.error('error POST /user', e)
         rep.send({ success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' })

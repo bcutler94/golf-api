@@ -172,17 +172,6 @@ const getContestCourse: RouteShorthandOptions = {
 const patchContestTeam: RouteShorthandOptions = {
   schema: {
     headers: genericSchema.headerAuth,
-    body: {
-      type: 'object',
-      required: [ 'teamName' ],
-      maxProperties: 1,
-      properties: {
-        teamName: {
-          type: 'string',
-          maxLength: MAX_STRING_LENGTH
-        }
-      }
-    },
     params: {
       type: 'object',
       required: [ 'contestId' ],
@@ -200,10 +189,11 @@ const patchContestTeam: RouteShorthandOptions = {
 export default {
   postContests,
   getContest,
+  patchContestTeam,
   getUserContests,
-  getChildContests,
-  postStartContest,
-  getContestScorecard,
-  postContestScorecard,
-  getContestCourse,
+  // getChildContests,
+  // postStartContest,
+  // getContestScorecard,
+  // postContestScorecard,
+  // getContestCourse,
 }

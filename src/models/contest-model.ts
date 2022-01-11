@@ -161,40 +161,45 @@ const getContest = async (contestId: string): Promise<GetContest> => {
   return contest;
 }
 
-const getRyderCupContests = async (ryderCupContestId: string): Promise<ContestModel[]> => {
+const joinTeam = async (contestId: string, userId: string, teamId: string) => {
   const collection = await getContestCollection();
-  return await collection.find({ ryderCupContestId }).toArray()
+  const contest = await collection.findOne({ contestId }, { projection: { teams: 1 } });
 }
 
-const getContestCourse = async (contestId: string): Promise<CourseModel> => {
-  const collection = await getContestCollection();
-  const [ { course } = { course: null } ] = await collection.aggregate<{ course: CourseModel | undefined }>([
-    {
-      '$match': {
-        'id': contestId,
-      }
-    }, {
-      '$lookup': {
-        'from': 'courses', 
-        'localField': 'courseId', 
-        'foreignField': 'id', 
-        'as': 'course'
-      }
-    }, {
-      '$project': {
-        '_id': 0, 
-        'course': {
-          '$first': '$course'
-        }
-      }
-    }
-  ]).toArray();
-  if (!course) {
-    logger.error(`there was an error trying to find contest course for contestId [${contestId}]`)
-    throw new Error ('There was an error retrieving course information. Please try again later.')
-  }
-  return course;
-}
+// const getRyderCupContests = async (ryderCupContestId: string): Promise<ContestModel[]> => {
+//   const collection = await getContestCollection();
+//   return await collection.find({ ryderCupContestId }).toArray()
+// }
+
+// const getContestCourse = async (contestId: string): Promise<CourseModel> => {
+//   const collection = await getContestCollection();
+//   const [ { course } = { course: null } ] = await collection.aggregate<{ course: CourseModel | undefined }>([
+//     {
+//       '$match': {
+//         'id': contestId,
+//       }
+//     }, {
+//       '$lookup': {
+//         'from': 'courses', 
+//         'localField': 'courseId', 
+//         'foreignField': 'id', 
+//         'as': 'course'
+//       }
+//     }, {
+//       '$project': {
+//         '_id': 0, 
+//         'course': {
+//           '$first': '$course'
+//         }
+//       }
+//     }
+//   ]).toArray();
+//   if (!course) {
+//     logger.error(`there was an error trying to find contest course for contestId [${contestId}]`)
+//     throw new Error ('There was an error retrieving course information. Please try again later.')
+//   }
+//   return course;
+// }
 
 // const getCourseId = async (contestId: string): Promise<string> => {
 //   const collection = await getContestCollection();
@@ -211,17 +216,18 @@ const getContestCourse = async (contestId: string): Promise<CourseModel> => {
 //   }
 // }
 
-const joinRyderContest = async (contestId: string, ) => {
-  const collection = await getContestCollection();
-  const { value } = await collection.findOneAndUpdate({ id: contestId }, { })
-}
+// const joinRyderContest = async (contestId: string, ) => {
+//   const collection = await getContestCollection();
+//   const { value } = await collection.findOneAndUpdate({ id: contestId }, { })
+// }
 
 export default {
   getContestCollection,
   createContests,
   getUserContests,
-  getContestCourse,
   getContest,
+  joinTeam,
+  // getContestCourse,
   // getCourseId,
-  getRyderCupContests,
+  // getRyderCupContests,
 }

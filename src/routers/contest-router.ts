@@ -32,6 +32,18 @@ interface GETContest {
   Reply: APIResponse<GetContest>
 }
 
+/**
+ * PATCH join a team on contest
+ */
+
+ interface PATCHContestTeam {
+  Params: {
+    contestId: string
+    teamId: string
+  }
+  Reply: APIResponse<GetContest>
+}
+
 
 /**
  * GET ryder cup contests
@@ -101,19 +113,7 @@ interface GETContest {
 //   Reply: APIResponse<GetContestCourseReply>
 // }
 
-/**
- * PATCH join a team on contest
- */
 
-// interface PATCHContestTeamJoin {
-//   Body: {
-//     teamName: string
-//   }
-//   Params: {
-//     contestId: string
-//   }
-//   Reply: APIResponse<{ contest: ContestWithChildren }>
-// }
 
 
 const contestRouter: FastifyPluginCallback = async (server) => {
@@ -183,6 +183,25 @@ const contestRouter: FastifyPluginCallback = async (server) => {
       }
     }
   })
+
+
+  server.route<PATCHContestTeam>({
+    method: 'PATCH',
+    url: '/contests/:contestId/team',
+    preValidation: [middleware.verifyUser],
+    schema: contestSchema.patchContestTeam.schema,
+    handler: async (req) => {
+      try {
+        const { params: { contestId }, user: { userId } } = req;
+        const data = await contestHandler.joinTeam(contestId, userId);
+        logger.info('success PATCH /contests/:contestId/team', contestId)
+        return { data, success: true }
+      } catch (e) {
+        logger.error('error success PATCH /contests/:contestId/team', e)
+        return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
+      }
+    }
+  });
 
   // server.route({
   //   method: 'GET',
@@ -333,24 +352,6 @@ const contestRouter: FastifyPluginCallback = async (server) => {
   //     }
   //   }
   // })
-
-  // server.route<PATCHContestTeamJoin>({
-  //   method: 'PATCH',
-  //   url: '/contests/:contestId/join',
-  //   preValidation: [middleware.verifyUser],
-  //   schema: contestSchema.postStartContest.schema,
-  //   handler: async (req) => {
-  //     try {
-  //       const { params: { contestId }, body: { teamName }, user: { userId } } = req;
-  //       const contest = await contestHandler.joinContest(contestId, userId, teamName);
-  //       logger.info('success POST /contest/:contestId/start', contestId)
-  //       return { data: { contest }, success: true }
-  //     } catch (e) {
-  //       logger.error('error POST /contest', e)
-  //       return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
-  //     }
-  //   }
-  // });
 
 }
 
