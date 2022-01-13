@@ -139,7 +139,7 @@ const joinTeam = async (contestId: string, userId: string): Promise<GetContest> 
           min,
           idx: min === team.userIds.length ? index : obj.idx
         }
-      }, { min: 0, idx: -1 });
+      }, { min: Infinity, idx: -1 });
 
       // add user to team
       teams[smallestTeamInfo.idx].userIds.push(userId);
