@@ -36,72 +36,90 @@ interface SingleMatchPlayCreation extends ContestCreationBase {
 
 export type ContestCreation =  RyderCupCreation | IndividualStrokePlayCreation | BestBallMatchPlayCreation | SingleMatchPlayCreation
 
-const createContests = async (userId: string, contests: ContestCreation[]) => {
+const createContest = async (userId: string, contest: ContestCreation) => {
 
-  const contestModels: ContestModel[] = contests.map((contest) => {
-    switch (contest.type) {
-      case 'ryder-cup':
-        const ryderCupContest: RyderCupContest = {
-          type: 'ryder-cup',
-          contestIds: [],
-          teams: [
-            { id: v4(), name: 'USA', captainId: '', userIds: [] },
-            { id: v4(), name: 'EUROPE', captainId: '', userIds: [] }
-          ],
-          id: v4(),
-          adminIds: [ userId ],
-          name: contest.name,
-          status: 'queued',
-          leaderboardId: null
-        }
-        return ryderCupContest;
-      case 'best-ball-match-play': {
-        const bestBallContest: BestBallMatchPlay = {
-          type: 'best-ball-match-play',
-          teamMatchups: [],
-          id: v4(),
-          adminIds: [ userId ],
-          name: contest.name,
-          status: 'queued',
-          leaderboardId: null,
-          courseId: contest.courseId,
-          scoringType: contest.scoringType,
-          ryderCupContestId: contest.ryderCupContestId
-        }
-        return bestBallContest;
+  let contestInput: ContestModel;
+  switch (contest.type) {
+    case 'ryder-cup':
+      const ryderCupContest: RyderCupContest = {
+        type: 'ryder-cup',
+        contestIds: [],
+        teams: [
+          { id: v4(), name: 'USA', captainId: '', userIds: [] },
+          { id: v4(), name: 'EUROPE', captainId: '', userIds: [] }
+        ],
+        id: v4(),
+        adminIds: [ userId ],
+        name: contest.name,
+        status: 'queued',
+        leaderboardId: null
       }
-      case 'singles-match-play':
-        const singlesContest: SinglesMatchPlay = {
-          type: 'singles-match-play',
-          singleMatchups: [],
-          id: v4(),
-          adminIds: [ userId ],
-          name: contest.name,
-          status: 'queued',
-          leaderboardId: null,
-          courseId: contest.courseId,
-          scoringType: contest.scoringType,
-          ryderCupContestId: contest.ryderCupContestId
-        }
-        return singlesContest
-      case 'individual-stroke-play':
-        const individualStrokeContest: IndividualStrokePlay = {
-          type: 'individual-stroke-play',
-          userIds: [],
-          id: v4(),
-          adminIds: [ userId ],
-          name: contest.name,
-          status: 'queued',
-          leaderboardId: null,
-          courseId: contest.courseId,
-          scoringType: contest.scoringType,
-          ryderCupContestId: contest.ryderCupContestId
-        }
-        return individualStrokeContest
+      contestInput = ryderCupContest;
+      break;
+    case 'best-ball-match-play': {
+      const bestBallContest: BestBallMatchPlay = {
+        type: 'best-ball-match-play',
+        teamMatchups: [],
+        id: v4(),
+        adminIds: [ userId ],
+        name: contest.name,
+        status: 'queued',
+        leaderboardId: null,
+        courseId: contest.courseId,
+        scoringType: contest.scoringType,
+        ryderCupContestId: contest.ryderCupContestId
+      }
+      if (contest.ryderCupContestId) {
+        const ryderCupContest = await contestModel.getContest(contest.ryderCupContestId);
+        const days = 'childContests' in ryderCupContest ? ryderCupContest.childContests.length + 1 : 1;
+        bestBallContest.name = `${ryderCupContest.contest.name} - Day ${days}`
+      }
+      contestInput = bestBallContest;
+      break;
     }
-  })
+    case 'singles-match-play':
+      const singlesContest: SinglesMatchPlay = {
+        type: 'singles-match-play',
+        singleMatchups: [],
+        id: v4(),
+        adminIds: [ userId ],
+        name: contest.name,
+        status: 'queued',
+        leaderboardId: null,
+        courseId: contest.courseId,
+        scoringType: contest.scoringType,
+        ryderCupContestId: contest.ryderCupContestId
+      }
+      if (contest.ryderCupContestId) {
+        const ryderCupContest = await contestModel.getContest(contest.ryderCupContestId);
+        const days = 'childContests' in ryderCupContest ? ryderCupContest.childContests.length + 1 : 1;
+        singlesContest.name = `${ryderCupContest.contest.name} - Day ${days}`
+      }
+      contestInput = singlesContest;
+      break;
+    case 'individual-stroke-play':
+      const individualStrokeContest: IndividualStrokePlay = {
+        type: 'individual-stroke-play',
+        userIds: [],
+        id: v4(),
+        adminIds: [ userId ],
+        name: contest.name,
+        status: 'queued',
+        leaderboardId: null,
+        courseId: contest.courseId,
+        scoringType: contest.scoringType,
+        ryderCupContestId: contest.ryderCupContestId
+      }
+      if (contest.ryderCupContestId) {
+        const ryderCupContest = await contestModel.getContest(contest.ryderCupContestId);
+        const days = 'childContests' in ryderCupContest ? ryderCupContest.childContests.length + 1 : 1;
+        individualStrokeContest.name = `${ryderCupContest.contest.name} - Day ${days}`
+      }
+      contestInput = individualStrokeContest;
+      break;
+  }
 
-  return await contestModel.createContests(contestModels)
+  return await contestModel.createContest(contestInput)
 }
 
 const getContest = async (contestId: string): Promise<GetContest> => {
@@ -293,7 +311,7 @@ const getScorecard = async (contestId: string, userId: string): Promise<Scorecar
 // }
 
 export default {
-  createContests,
+  createContest,
   getContest,
   getUserContests,
   joinTeam,

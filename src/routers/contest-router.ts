@@ -9,11 +9,11 @@ import logger from "../util/logger";
 /**
  * POST create contests
  */
-interface POSTContests {
+interface POSTContest {
   Body: {
-    contests: ContestCreation[]
+    contest: ContestCreation
   }
-  Reply: APIResponse<{ contests: ContestModel[] }>
+  Reply: APIResponse<{ contest: ContestModel }>
 }
 
 /**
@@ -118,17 +118,17 @@ interface GETContest {
 
 const contestRouter: FastifyPluginCallback = async (server) => {
 
-  server.route<POSTContests>({
+  server.route<POSTContest>({
     method: 'POST',
     url: '/contest',
     preValidation: [middleware.verifyUser],
-    schema: contestSchema.postContests.schema,
+    schema: contestSchema.postContest.schema,
     handler: async (req) => {
       try {
-        const { body: { contests }, user: { userId } } = req;
-        const contestModels = await contestHandler.createContests(userId, contests);
+        const { body: { contest }, user: { userId } } = req;
+        const contestModel = await contestHandler.createContest(userId, contest);
         logger.info('success POST /contest', userId)
-        return { data: { contests: contestModels }, success: true }
+        return { data: { contest: contestModel }, success: true }
       } catch (e) {
         logger.error('error POST /contest', e)
         return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
@@ -141,7 +141,7 @@ const contestRouter: FastifyPluginCallback = async (server) => {
     url: '/contests',
     preValidation: [middleware.verifyUser],
     schema: contestSchema.getUserContests.schema,
-    handler: async (req, rep) => {
+    handler: async (req) => {
       try {
         const { user: { userId } } = req;
         const contests = await contestHandler.getUserContests(userId)

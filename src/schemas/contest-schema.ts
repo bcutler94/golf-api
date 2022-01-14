@@ -5,52 +5,43 @@ import genericSchema from "./generic-schema"
 const MAX_CONTESTS = 10;
 export const MAX_STRING_LENGTH = 100;
 
-const postContests: RouteShorthandOptions = {
+const postContest: RouteShorthandOptions = {
   schema: {
     headers: genericSchema.headerAuth,
     body: {
-      type: 'object',
+      type:  'object',
       properties: {
-        contests: {
-          type: "array",
-          maxItems: MAX_CONTESTS,
-          items: {
-            type:  'object',
-            properties: {
-              numMatches: {
-                type: 'number',
-                max: MAX_CONTESTS
-              },
-              name: {
-                type: 'string',
-                maxLength: MAX_STRING_LENGTH
-              },
-              scoringType: {
-                enum: [ ...SCORING_TYPE ]
-              },
-              course: {
-                type: 'object',
-                requiredProperties: [ 'id', 'fullName', 'city', 'state' ],
-                maxProperties: 4,
-                properties: {
-                  id: { // this should be uuid format but client can send empty string 
-                    type: 'string',
-                    maxLength: MAX_STRING_LENGTH
-                  },
-                  fullName: {
-                    type: 'string',
-                    maxLength: MAX_STRING_LENGTH
-                  },
-                  city: {
-                    type: 'string',
-                    maxLength: MAX_STRING_LENGTH
-                  },
-                  state: {
-                    type: 'string',
-                    maxLength: 2
-                  }
-                }
-              }
+        numMatches: {
+          type: 'number',
+          max: MAX_CONTESTS
+        },
+        name: {
+          type: 'string',
+          maxLength: MAX_STRING_LENGTH
+        },
+        scoringType: {
+          enum: [ ...SCORING_TYPE ]
+        },
+        course: {
+          type: 'object',
+          requiredProperties: [ 'id', 'fullName', 'city', 'state' ],
+          maxProperties: 4,
+          properties: {
+            id: { // this should be uuid format but client can send empty string 
+              type: 'string',
+              maxLength: MAX_STRING_LENGTH
+            },
+            fullName: {
+              type: 'string',
+              maxLength: MAX_STRING_LENGTH
+            },
+            city: {
+              type: 'string',
+              maxLength: MAX_STRING_LENGTH
+            },
+            state: {
+              type: 'string',
+              maxLength: 2
             }
           }
         }
@@ -187,7 +178,7 @@ const patchContestTeam: RouteShorthandOptions = {
 }
 
 export default {
-  postContests,
+  postContest,
   getContest,
   patchContestTeam,
   getUserContests,

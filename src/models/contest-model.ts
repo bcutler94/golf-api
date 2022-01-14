@@ -1,7 +1,7 @@
-import { WithId, Document, AggregationCursor } from 'mongodb';
+
+import { Document } from 'mongodb';
 import database from '../data-layer/database';
 import logger from '../util/logger';
-import { CourseModel } from './course-model';
 
 
 export const CONTEST_TYPES = [
@@ -98,14 +98,14 @@ const getContestCollection = async () => {
   return db.collection<ContestModel>('contests');
 }
 
-const createContests = async (contests: ContestModel[]): Promise<ContestModel[]> => {
+const createContest = async (contest: ContestModel): Promise<ContestModel> => {
   const c = await getContestCollection();
-  const { acknowledged } = await c.insertMany(contests);
+  const { acknowledged } = await c.insertOne(contest);
   if (!acknowledged) {
-    logger.error('error inserting contests', contests)
+    logger.error('error inserting contests', contest)
     throw new Error('Error saving contests')
   }
-  return contests;
+  return contest;
 }
 
 const getUserContests = async (userId: string): Promise<ContestModel[]> => {
@@ -117,7 +117,8 @@ const getUserContests = async (userId: string): Promise<ContestModel[]> => {
       { $expr: { $in: [ userId, { $ifNull: ['$team.userIds', [] ] } ] } },
       { $expr: { $in: [ userId, { $ifNull: ['$teamMatchups.teams.userIds', [] ] } ] } },
       { $expr: { $eq: [ userId, { $ifNull: ['$singleMatchups.user.userId', [] ] } ] } },
-    ]
+    ],
+    ryderCupContestId: null
   }).toArray()
 }
 
@@ -134,9 +135,13 @@ interface GetMultiDayContest {
 
 export type GetContest = GetSingleDayContest | GetMultiDayContest
 
-const getContest = async (contestId: string): Promise<GetContest> => {
+interface Projection {
+  [key: string]: 1
+}
+
+const getContest = async (contestId: string, projection?: Projection): Promise<GetContest> => {
   const collection = await getContestCollection();
-  const [ contest ] = await collection.aggregate<GetContest | null>([
+  const pipeline: Document[] = [
     {
       '$match': {
         'id': contestId
@@ -153,7 +158,13 @@ const getContest = async (contestId: string): Promise<GetContest> => {
         'as': 'childContests'
       }
     }
-  ]).toArray()
+  ]
+  if (projection) {
+    pipeline.push({
+      $project: projection
+    })
+  }
+  const [ contest ] = await collection.aggregate<GetContest | null>(pipeline).toArray()
   if (!contest) {
     logger.error('couldnt find contest', contestId)
     throw new Error ('couldnt find contest')
@@ -161,10 +172,10 @@ const getContest = async (contestId: string): Promise<GetContest> => {
   return contest;
 }
 
-const joinTeam = async (contestId: string, userId: string, teamId: string) => {
-  const collection = await getContestCollection();
-  const contest = await collection.findOne({ contestId }, { projection: { teams: 1 } });
-}
+// const joinTeam = async (contestId: string, userId: string, teamId: string) => {
+//   const collection = await getContestCollection();
+//   const contest = await collection.findOne({ contestId }, { projection: { teams: 1 } });
+// }
 
 // const getRyderCupContests = async (ryderCupContestId: string): Promise<ContestModel[]> => {
 //   const collection = await getContestCollection();
@@ -223,10 +234,10 @@ const joinTeam = async (contestId: string, userId: string, teamId: string) => {
 
 export default {
   getContestCollection,
-  createContests,
+  createContest,
   getUserContests,
   getContest,
-  joinTeam,
+  // joinTeam,
   // getContestCourse,
   // getCourseId,
   // getRyderCupContests,
