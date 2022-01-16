@@ -57,32 +57,38 @@ export interface SingleDayContestBase extends BaseContest {
   ryderCupContestId?: string
 }
 
+type Teams = [
+  { id: string, name: string, captainId: string, userIds: string[] },
+  { id: string, name: string, captainId: string, userIds: string[] }
+]
 export interface RyderCupContest extends MultiDayContestBase {
   type: 'ryder-cup'
-  teams: Team[]
+  teams: Teams
 }
 
+interface StrokePlayPlayer {
+  player: string
+  teamId?: string
+}
 export interface IndividualStrokePlay extends SingleDayContestBase {
   type: 'individual-stroke-play'
-  userIds: string[]
+  players: StrokePlayPlayer[]
 }
-interface TeamMatchup {
-  teams: Team[]
-}
+
+export type TeamMatchup = [
+  { player1: string, player2: string, teamId: string },
+  { player1: string, player2: string, teamId: string },
+]
 
 export interface BestBallMatchPlay extends SingleDayContestBase {
   type: 'best-ball-match-play'
   teamMatchups: TeamMatchup[]
 }
 
-interface TeamPlayer { 
-  userId: string
-  teamId: string
-}
-interface SingleMatchup {
-  users: TeamPlayer[]
-}
-
+export type SingleMatchup = [
+  { player: string, teamId: string },
+  { player: string, teamId: string }
+]
 export interface SinglesMatchPlay extends SingleDayContestBase {
   type: 'singles-match-play'
   singleMatchups: SingleMatchup[]
@@ -124,10 +130,12 @@ const getUserContests = async (userId: string): Promise<ContestModel[]> => {
 
 
 interface GetSingleDayContest {
+  type: 'single-day'
   contest: SingleDayContests
 }
 
 interface GetMultiDayContest {
+  type: 'multi-day'
   contest: MultiDayContests
   childContests: SingleDayContests[]
 }
@@ -135,11 +143,7 @@ interface GetMultiDayContest {
 
 export type GetContest = GetSingleDayContest | GetMultiDayContest
 
-interface Projection {
-  [key: string]: 1
-}
-
-const getContest = async (contestId: string, projection?: Projection): Promise<GetContest> => {
+const getContest = async (contestId: string): Promise<GetContest> => {
   const collection = await getContestCollection();
   const pipeline: Document[] = [
     {
@@ -157,13 +161,24 @@ const getContest = async (contestId: string, projection?: Projection): Promise<G
         'foreignField': 'ryderCupContestId', 
         'as': 'childContests'
       }
+    }, {
+      '$addFields': {
+        'type': {
+          '$cond': {
+            'if': {
+              '$in': [
+                '$contest.type', [
+                  'ryder-cup'
+                ]
+              ]
+            }, 
+            'then': 'multi-day', 
+            'else': 'single-day'
+          }
+        }
+      }
     }
   ]
-  if (projection) {
-    pipeline.push({
-      $project: projection
-    })
-  }
   const [ contest ] = await collection.aggregate<GetContest | null>(pipeline).toArray()
   if (!contest) {
     logger.error('couldnt find contest', contestId)
