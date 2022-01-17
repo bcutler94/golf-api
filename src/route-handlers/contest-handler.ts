@@ -1,7 +1,7 @@
 import { AnyBulkWriteOperation, IndexSpecification } from "mongodb";
 import { v4 } from "uuid"
 import database from "../data-layer/database";
-import contestModel, { BestBallMatchPlay, ContestModel, ContestTypes, GetContest, IndividualStrokePlay, RyderCupContest, ScoringTypes, SingleMatchup, SinglesMatchPlay, TeamMatchup } from "../models/contest-model"
+import contestModel, { BestBallMatchPlay, ContestModel, ContestTypes, GetContest, IndividualStrokePlay, RyderCupContest, ScoringTypes, SingleDayContests, SingleMatchup, SinglesMatchPlay, TeamMatchup } from "../models/contest-model"
 import { CourseModel } from "../models/course-model";
 import scorecardModel, { ScorecardModel } from "../models/scorecard-model";
 import logger from "../util/logger";
@@ -35,6 +35,89 @@ interface SingleMatchPlayCreation extends ContestCreationBase {
 }
 
 export type ContestCreation =  RyderCupCreation | IndividualStrokePlayCreation | BestBallMatchPlayCreation | SingleMatchPlayCreation
+
+const addPlayerToChildContest = (contest: SingleDayContests, userId: string, teamId: string, otherTeamId: string): SingleDayContests => {
+
+  const { type } = contest;
+  switch (type) {
+    case 'individual-stroke-play':
+      const { players } = contest
+      players.push({ player: userId, teamId });
+      return contest;
+    case 'singles-match-play':
+      const { singleMatchups } = contest;
+
+      // try and add player to team matchup that may not have a player yet
+      let addedSinglePlayer = false;
+      for (const [ player1, player2 ] of singleMatchups) {
+        if (player1.teamId === teamId) {
+          if (!player1.player) {
+            player1.player = userId;
+            addedSinglePlayer = true
+            break;
+          }
+        } else {
+          if (!player2.player) {
+            player2.player = userId;
+            addedSinglePlayer = true
+            break;
+          }
+        }
+      }
+
+      // otherwise just create new entry and add player
+      if (!addedSinglePlayer) {
+        singleMatchups[singleMatchups.length] = [
+          { player: userId, teamId },
+          { player: '', teamId: otherTeamId }
+        ]
+      }
+
+      return contest;
+
+    case 'best-ball-match-play':
+      const { teamMatchups } = contest;
+
+      // try and add player to team matchup that may not have a player yet
+      let addedTeamPlayer = false;
+      for (const [ team1, team2 ] of teamMatchups) {
+        if (team1.teamId === teamId) {
+          if (!team1.player1) {
+            team1.player1 = userId;
+            addedTeamPlayer = true
+            break;
+          }
+          if (!team2.player1) {
+            team2.player1 = userId;
+            addedTeamPlayer = true;
+            break;
+          }
+        } else {
+          if (!team1.player1) {
+            team1.player1 = userId;
+            addedTeamPlayer = true;
+            break;
+          }
+          if (!team2.player1) {
+            team2.player1 = userId;
+            addedTeamPlayer = true;
+            break;
+          }
+        }
+      }
+
+      // otherwise just create new entry and add player
+      if (!addedTeamPlayer) {
+        teamMatchups[teamMatchups.length] = [
+          { player1: userId, player2: '', teamId },
+          { player1: '', player2: '', teamId: otherTeamId },
+        ]
+      }
+      return contest;
+
+  }
+}
+
 
 const createContest = async (userId: string, contest: ContestCreation) => {
 
@@ -233,15 +316,10 @@ const getUserContests = async (userId: string): Promise<ContestModel[]> => {
 }
 
 const joinTeam = async (contestId: string, userId: string): Promise<GetContest> => {
-  const collection = await contestModel.getContestCollection();
-  const contest = await collection.findOne({ id: contestId });
-  if (!contest) {
-    logger.error('cant find contest when joining team', contestId, userId)
-    throw new Error ()
-  }
-  const { type } = contest;
-  switch (type) {
-    case 'ryder-cup':
+  const contestData = await contestModel.getContest(contestId);
+  switch (contestData.type) {
+    case 'multi-day':
+      const { contest, childContests } = contestData
       const { teams } = contest;
 
       // make sure not in any teams
@@ -269,26 +347,17 @@ const joinTeam = async (contestId: string, userId: string): Promise<GetContest> 
         teams[smallestTeamInfo.idx].captainId = userId
       }
 
-      const { ok } = await collection.findOneAndUpdate({ id: contestId }, {
-        $set: {
-          teams: teams
-        }
-      });
+      const teamId = teams[smallestTeamInfo.idx].id;
+      const otherTeamId = teams[smallestTeamInfo.idx === 0 ? 1 : 0].id;
 
-      if (!ok) {
-        logger.error('unable to update teams on ryder cup contest ', contestId, userId)
-        throw new Error()
-      }
-      
-    case 'individual-stroke-play':
-    case 'singles-match-play':
-    case 'best-ball-match-play':
+      const newChildContests = childContests.map(contest => addPlayerToChildContest(contest, userId, teamId, otherTeamId))
+
+      await contestModel.replaceContests([ contest, ...newChildContests ])
+      break;
+    case 'single-day':
       // TODO
       break;
-    default:
-      const n: never = type;
-  }
-
+    }
   return await contestModel.getContest(contestId);
 }
 

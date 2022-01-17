@@ -4,6 +4,7 @@ import playerModel, { PlayerModel } from "./models/player-model";
 import ghinApi, { GHINGolfer } from "./networking/ghin-api";
 import processGolfers from "./pubsub/jobs/process-golfers";
 import pubsub from "./pubsub/pubsub";
+import contestHandler from "./route-handlers/contest-handler";
 import createContests from "./scripts/createContests";
 import scrapeCourses from "./scripts/scrapeCourses";
 import scrapeGolfers from "./scripts/scrapeGolfers";
@@ -11,14 +12,15 @@ import logger from "./util/logger";
 
 
 
+
 const scriptToRun = async () => {
   await database.startDB()
   await pubsub.startPubSub({ attachListeners: false })
   // insert here below here
-  // await processGolfers({ course: { externalId: '3137', courseName: 'Waynesborough' }})
 
-  await ghinApi.getClubGolfers('3137', 1)
-
+  const data = await contestHandler.joinTeam('3247848e-7f8f-4bc2-b373-a34bcc412935', 'jill');
+  logger.info(data)
+  
 }
 
 const start = async () => {

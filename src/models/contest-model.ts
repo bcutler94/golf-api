@@ -1,5 +1,5 @@
 
-import { Document } from 'mongodb';
+import { AnyBulkWriteOperation, Document } from 'mongodb';
 import database from '../data-layer/database';
 import logger from '../util/logger';
 
@@ -94,7 +94,7 @@ export interface SinglesMatchPlay extends SingleDayContestBase {
   singleMatchups: SingleMatchup[]
 }
 
-type SingleDayContests = SinglesMatchPlay | BestBallMatchPlay | IndividualStrokePlay
+export type SingleDayContests = SinglesMatchPlay | BestBallMatchPlay | IndividualStrokePlay
 type MultiDayContests = RyderCupContest
 
 export type ContestModel = SingleDayContests | MultiDayContests
@@ -187,6 +187,25 @@ const getContest = async (contestId: string): Promise<GetContest> => {
   return contest;
 }
 
+const replaceContests = async (newContests: ContestModel[]): Promise<void> => {
+  const collection = await getContestCollection();
+
+  const ops: AnyBulkWriteOperation<ContestModel>[] = newContests.map(newContest => {
+    return {
+      replaceOne: {
+        filter: { id: newContest.id },
+        replacement: newContest
+      }
+    }
+  })
+
+  const { ok } = await collection.bulkWrite(ops);
+  if (!ok) {
+    logger.error('there was an error replacing contests', newContests)
+    throw new Error()
+  }
+}
+
 // const joinTeam = async (contestId: string, userId: string, teamId: string) => {
 //   const collection = await getContestCollection();
 //   const contest = await collection.findOne({ contestId }, { projection: { teams: 1 } });
@@ -252,6 +271,7 @@ export default {
   createContest,
   getUserContests,
   getContest,
+  replaceContests
   // joinTeam,
   // getContestCourse,
   // getCourseId,
