@@ -6,7 +6,7 @@ const post: RouteShorthandOptions = {
     body: {
       type: 'object',
       maxProperties: 5,
-      required: [ 'ghin', 'phoneNumber', 'pushToken', 'contestId', 'referrerUserId' ],
+      required: [ 'ghin', 'phoneNumber' ],
       properties: {
         ghin: { 
           type: 'string',
