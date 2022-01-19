@@ -4,7 +4,7 @@ import { v4 } from 'uuid';
 import { POSTUserRoute } from "../routers/user-router";
 
 const createUser = async (params: POSTUserRoute['Body']): Promise<UserModel> => {
-  const { ghin, groupIds, pushToken, phoneNumber } = params;
+  const { ghin, contestId, referrerUserId, pushToken, phoneNumber } = params;
   const { last_name: lastName, first_name: firstName, club_name: clubName, hi_value: currentHandicap } = await ghinApi.getUser(ghin);
   return await userModel.createUser({
     id: v4(), 
@@ -12,14 +12,17 @@ const createUser = async (params: POSTUserRoute['Body']): Promise<UserModel> => 
     lastName, 
     clubName, 
     firstName, 
-    currentHandicap, 
-    groupIds,
+    currentHandicap,
     pushToken,
-    phoneNumber
+    phoneNumber,
+    referralInfo: {
+      contestId,
+      referrerUserId
+    }
   });
 }
 
-const getUser = async (userId: string): Promise<UserModel> => {
+const getUser = async (userId: string): Promise<UserModel | undefined> => {
   return await userModel.getUser(userId)
 }
 

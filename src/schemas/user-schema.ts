@@ -1,13 +1,12 @@
 import { RouteShorthandOptions } from "fastify"
 import genericSchema from "./generic-schema"
 
-const postBodyRequiredKeys = [ 'ghin', 'phoneNumber', 'pushToken', 'groupIds' ];
 const post: RouteShorthandOptions = {
   schema: {
     body: {
       type: 'object',
-      maxProperties: postBodyRequiredKeys.length,
-      required: postBodyRequiredKeys,
+      maxProperties: 5,
+      required: [ 'ghin', 'phoneNumber', 'pushToken', 'contestId', 'referrerUserId' ],
       properties: {
         ghin: { 
           type: 'string',
@@ -21,14 +20,17 @@ const post: RouteShorthandOptions = {
         },
         pushToken: {
           type: 'string',
-          maxLength: 50
+          maxLength: 50,
         },
-        groupIds: { 
-          type: 'array',
-          maxItems: 5,
-          items: {
-            type: 'string'
-          }
+        contestId: { 
+          type: 'string',
+          format: 'uuid',
+          nullable: true
+        },
+        referrerUserId: {
+          type: 'string',
+          format: 'uuid',
+          nullable: true
         }
       }
     },

@@ -10,7 +10,7 @@ import { UserModel } from "../models/user-model";
  * GET
  */
 interface GETUserRoute {
-  Reply: APIResponse<{ user: UserModel }>
+  Reply: APIResponse<{ user: UserModel | undefined }>
 }
 
 /**
@@ -19,8 +19,9 @@ interface GETUserRoute {
 interface PostUserBody {
   ghin: string
   phoneNumber: string
-  groupIds: Array<string>
-  pushToken: string
+  contestId?: string
+  referrerUserId?: string
+  pushToken?: string
 }
   export interface POSTUserRoute {
     Body: PostUserBody
@@ -38,7 +39,7 @@ const userRouter: FastifyPluginCallback = async (server, opts, done) => {
         const { user: { userId } } = req;
         logger.info('userId', userId)
         const user = await userHander.getUser(userId)
-        logger.info('got user', user.id)
+        logger.info('got user', user?.id)
         rep.send({ success: true, data: { user } });
       } catch (e) {
         logger.error('error GET /user', e)
