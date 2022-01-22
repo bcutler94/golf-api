@@ -68,7 +68,7 @@ const courseRouter: FastifyPluginCallback = async (server) => {
     url: '/courses/lat/:lat/long/:long',
     preValidation: [middleware.verifyUser],
     schema: courseSchema.geolocate.schema,
-    handler: async (req, rep) => {
+    handler: async (req) => {
       try {
         const { params: { lat, long } } = req;
         const courses = await courseHandler.geolocateCourses(lat, long);

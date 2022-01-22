@@ -11,3 +11,4 @@ cleanup
 todo
  - config
  - schema versioning
+ - generic error messaging

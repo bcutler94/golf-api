@@ -11,10 +11,6 @@ import scorecardHandler from "../route-handlers/scorecard-handler";
  * POST create scorecard
  */
 
-interface PostScorecardReply {
-  scorecard: ScorecardModel
-}
-
 interface POSTScorecard {
   Body: {
     contestId: string
@@ -22,16 +18,29 @@ interface POSTScorecard {
     gender: string
     courseId: string
   }
-  Reply: APIResponse<PostScorecardReply>
+  Reply: APIResponse<{
+    scorecard: ScorecardModel
+  }>
 }
 
+/**
+ * GET scorecard
+ */
+interface GETScorecard {
+  Params: {
+    contestId: string
+  }
+  Reply: APIResponse<{
+    scorecard: ScorecardModel | null
+  }>
+}
 
 const scorecardRouter: FastifyPluginCallback = async (server) => {
 
 
   server.route<POSTScorecard>({
-    method: 'PATCH',
-    url: '/scorecards/:scorecardId',
+    method: 'POST',
+    url: '/scorecard',
     preValidation: [middleware.verifyUser],
     schema: scorecardSchema.postScorecard.schema,
     handler: async (req) => {
@@ -46,6 +55,26 @@ const scorecardRouter: FastifyPluginCallback = async (server) => {
       }
     }
   });
+
+  server.route<GETScorecard>({
+    method: 'GET',
+    url: '/scorecards/contest/:contestId',
+    preValidation: [middleware.verifyUser],
+    schema: scorecardSchema.postScorecard.schema,
+    handler: async (req) => {
+      try {
+        const { params: { contestId }, user: { userId } } = req;
+        const scorecard = await scorecardHandler.getContestScorecard(contestId, userId)
+        logger.info('success GET /scorecards/contest/:contestId', contestId, userId)
+        return { data: { scorecard }, success: true }
+      } catch (e) {
+        logger.error('success GET /scorecards/contest/:contestId', e)
+        return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
+      }
+    }
+  });
+
+
 
 
 

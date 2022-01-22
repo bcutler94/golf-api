@@ -1,4 +1,5 @@
 import { v4 } from "uuid";
+import contestModel from "../models/contest-model";
 import scorecardModel, { ScorecardModel } from "../models/scorecard-model";
 import userModel from "../models/user-model";
 import ghinApi from "../networking/ghin-api";
@@ -33,6 +34,11 @@ const createScorecard = async (userId: string, contestId: string, tees: string, 
   })  
 }
 
+const getContestScorecard = async (contestId: string, playerId: string): Promise<ScorecardModel | null> => {
+  return await scorecardModel.getContestScorecard(contestId, playerId)
+}
+
 export default {
-  createScorecard
+  createScorecard,
+  getContestScorecard
 }

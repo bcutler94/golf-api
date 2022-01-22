@@ -72,6 +72,12 @@ const createScorecard = async (model: ScorecardModel): Promise<ScorecardModel> =
   return model;
 }
 
+const getContestScorecard = async (contestId: string, playerId: string): Promise<ScorecardModel | null> => {
+  const collection = await getScorecardCollection();
+  const scorecard = await collection.findOne({ contestId, playerId });
+  return scorecard
+}
+
 // const getScorecard = async (contestId: string, userId: string): Promise<ScorecardModel | null> => {
 //   const collection = await getScorecardCollection();
 //   return await collection.findOne({ contestId, participantId: userId })
@@ -107,7 +113,8 @@ const createScorecard = async (model: ScorecardModel): Promise<ScorecardModel> =
 
 export default {
   // getScorecardCollection,
-  createScorecard
+  createScorecard,
+  getContestScorecard
   // getScorecard,
   // createScorecard,
   // setTees
