@@ -1,6 +1,7 @@
 import { v4 } from "uuid";
 import database from "./data-layer/database";
 import playerModel, { PlayerModel } from "./models/player-model";
+import userModel from "./models/user-model";
 import ghinApi, { GHINGolfer } from "./networking/ghin-api";
 import processGolfers from "./pubsub/jobs/process-golfers";
 import pubsub from "./pubsub/pubsub";
@@ -18,8 +19,9 @@ const scriptToRun = async () => {
   await pubsub.startPubSub({ attachListeners: false })
   // insert here below here
 
-  const data = await contestHandler.joinTeam('3247848e-7f8f-4bc2-b373-a34bcc412935', 'jill');
-  logger.info(data)
+  // const user = await userModel.getUser('ec083151-e8bb-49a8-abb4-6b93bf000854');
+  // const data = await ghinApi.getPlayerCourseHandicap(user?.ghin, '11256')
+  // logger.info(data[0])
   
 }
 

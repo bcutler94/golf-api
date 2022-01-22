@@ -37,14 +37,6 @@ interface BaseContest {
   adminIds: string[]
   name: string
   status: ContestStatuses
-  leaderboardId: string | null
-}
-
-interface Team {
-  id: string
-  name: string
-  captainId: string
-  userIds: string[]
 }
 
 export interface MultiDayContestBase extends BaseContest {
@@ -61,37 +53,72 @@ type Teams = [
   { id: string, name: string, captainId: string, userIds: string[] },
   { id: string, name: string, captainId: string, userIds: string[] }
 ]
+
+export type RyderCupLeaderboard = { 
+  contestId: string,
+  teamScores: {
+    [teamId: string]: number
+  }
+}[]
 export interface RyderCupContest extends MultiDayContestBase {
   type: 'ryder-cup'
   teams: Teams
+  leaderboard: RyderCupLeaderboard
 }
 
 interface StrokePlayPlayer {
-  player: string
+  playerId: string
   teamId?: string
 }
+
+export type IndividualStrokePlayLeaderboard = {
+  playerId: string,
+  teamId?: string
+  score: number
+}[]
 export interface IndividualStrokePlay extends SingleDayContestBase {
   type: 'individual-stroke-play'
   players: StrokePlayPlayer[]
+  leaderboard: IndividualStrokePlayLeaderboard
 }
 
 export type TeamMatchup = [
-  { player1: string, player2: string, teamId: string },
-  { player1: string, player2: string, teamId: string },
+  { player1Id: string, player2Id: string, teamId: string },
+  { player1Id: string, player2Id: string, teamId: string },
 ]
 
+
+export type BestBallMatchPlayLeaderboard = {
+  thru: number,
+  holesUp: number,
+  winningTeamId: string
+  losingTeamId: string
+  isFinal: boolean
+  isDormi: boolean
+}[]
 export interface BestBallMatchPlay extends SingleDayContestBase {
   type: 'best-ball-match-play'
   teamMatchups: TeamMatchup[]
+  leaderboard: BestBallMatchPlayLeaderboard
 }
 
 export type SingleMatchup = [
-  { player: string, teamId: string },
-  { player: string, teamId: string }
+  { playerId: string, teamId: string },
+  { playerId: string, teamId: string }
 ]
+
+export type SinglesMatchPlayLeaderboard = {
+  thru: number,
+  holesUp: number,
+  winningPlayerId: string
+  losingPlayerId: string
+  isFinal: boolean
+  isDormi: boolean
+}[]
 export interface SinglesMatchPlay extends SingleDayContestBase {
   type: 'singles-match-play'
   singleMatchups: SingleMatchup[]
+  leaderboard: SinglesMatchPlayLeaderboard
 }
 
 export type SingleDayContests = SinglesMatchPlay | BestBallMatchPlay | IndividualStrokePlay

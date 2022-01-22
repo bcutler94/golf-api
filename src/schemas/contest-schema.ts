@@ -92,7 +92,7 @@ const getChildContests: RouteShorthandOptions = {
   }
 }
 
-const postStartContest: RouteShorthandOptions = {
+const patchStartContest: RouteShorthandOptions = {
   schema: {
     headers: genericSchema.headerAuth,
     params: {
@@ -182,8 +182,8 @@ export default {
   getContest,
   patchContestTeam,
   getUserContests,
+  patchStartContest,
   // getChildContests,
-  // postStartContest,
   // getContestScorecard,
   // postContestScorecard,
   // getContestCourse,

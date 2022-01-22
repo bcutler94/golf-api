@@ -1,52 +1,47 @@
 import { FastifyPluginCallback } from "fastify";
-import { ContestModel, ContestTypes, ContestViews, ContestViewTypes, ContestWithChildren, ParticipantTypes, ResultTypes, ScoringTypes } from "../models/contest-model";
-import contestHandler from "../route-handlers/contest-handler";
 import middleware from "../util/middleware";
-import contestSchema from "../schemas/contest-schema";
 import { APIResponse } from "../server";
 import logger from "../util/logger";
-import { CourseModel, CourseSearchView } from "../models/course-model";
 import { ScorecardModel } from "../models/scorecard-model";
 import scorecardSchema from "../schemas/scorecard-schema";
 import scorecardHandler from "../route-handlers/scorecard-handler";
 
 
 /**
- * PATCH select tees
+ * POST create scorecard
  */
 
-interface PatchScorecardTeesReply {
+interface PostScorecardReply {
   scorecard: ScorecardModel
 }
 
-interface PATCHScorecardTees {
-  Params: {
-    scorecardId: string
-  },
+interface POSTScorecard {
   Body: {
+    contestId: string
     tees: string
     gender: string
+    courseId: string
   }
-  Reply: APIResponse<PatchScorecardTeesReply>
+  Reply: APIResponse<PostScorecardReply>
 }
 
 
 const scorecardRouter: FastifyPluginCallback = async (server) => {
 
 
-  server.route<PATCHScorecardTees>({
+  server.route<POSTScorecard>({
     method: 'PATCH',
-    url: '/scorecards/:scorecardId/tees',
+    url: '/scorecards/:scorecardId',
     preValidation: [middleware.verifyUser],
-    schema: scorecardSchema.patchScorecardTees.schema,
+    schema: scorecardSchema.postScorecard.schema,
     handler: async (req) => {
       try {
-        const { params: { scorecardId }, body: { tees, gender } } = req;
-        const scorecard = await scorecardHandler.setTees(scorecardId, tees, gender)
-        logger.info('success PATCH /scorecards/:scorecardId/tees', scorecardId, tees, gender)
+        const { body: { tees, gender, contestId, courseId }, user: { userId } } = req;
+        const scorecard = await scorecardHandler.createScorecard(userId, contestId, tees, gender, courseId)
+        logger.info('success POST /scorecards/:scorecardId', userId, contestId, tees, gender)
         return { data: { scorecard }, success: true }
       } catch (e) {
-        logger.error('success PATCH /scorecards/:scorecardId/tees', e)
+        logger.error('success POST /scorecards/:scorecardId', e)
         return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
       }
     }

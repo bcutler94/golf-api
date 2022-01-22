@@ -4,7 +4,7 @@ import middleware from "../util/middleware";
 import courseSchema from "../schemas/course-schema";
 import { APIResponse } from "../server";
 import logger from "../util/logger";
-import { CourseSearchView } from "../models/course-model";
+import { CourseSearchView, CourseTees } from "../models/course-model";
 
 /**
  * GET search courses
@@ -32,15 +32,15 @@ interface GETsearchCourses{
 /**
  * GET course tees
  */
-// interface GetCourseTeesResponse {
-//   course: CourseTeeView
-// }
-// interface GETCourseTeeRoute {
-//   Params: {
-//     courseId: string
-//   }
-//   Reply: APIResponse<GetCourseTeesResponse>
-// }
+interface GetCourseTeesResponse {
+  tees: CourseTees
+}
+interface GETCourseTeeRoute {
+  Params: {
+    courseId: string
+  }
+  Reply: APIResponse<GetCourseTeesResponse>
+}
  
 
 const courseRouter: FastifyPluginCallback = async (server) => {
@@ -81,23 +81,23 @@ const courseRouter: FastifyPluginCallback = async (server) => {
     }
   })
 
-  // server.route<GETCourseTeeRoute>({
-  //   method: 'GET',
-  //   url: '/courses/:courseId/tees',
-  //   preValidation: [middleware.verifyUser],
-  //   schema: courseSchema.getTees.schema,
-  //   handler: async (req) => {
-  //     try {
-  //       const { params: { courseId } } = req;
-  //       const course = await courseHandler.getTees(courseId)
-  //       logger.info('success GET /courses/:courseId/tees', courseId)
-  //       return { success: true, data: { course } }
-  //     } catch (e) {
-  //       logger.error('error GET /courses/:courseId/tees', e)
-  //       return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
-  //     }
-  //   }
-  // })
+  server.route<GETCourseTeeRoute>({
+    method: 'GET',
+    url: '/courses/:courseId/tees',
+    preValidation: [middleware.verifyUser],
+    schema: courseSchema.getTees.schema,
+    handler: async (req) => {
+      try {
+        const { params: { courseId } } = req;
+        const tees = await courseHandler.getTees(courseId)
+        logger.info('success GET /courses/:courseId/tees', courseId)
+        return { success: true, data: { tees } }
+      } catch (e) {
+        logger.error('error GET /courses/:courseId/tees', e)
+        return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
+      }
+    }
+  })
 
 }
 

@@ -319,6 +319,39 @@ const getAssociationCourses = async (associationId: number): Promise<GHINAssocia
   }
 }
 
+interface GetPlayerCourseHandicapResponse {
+  tee_sets: {
+    tee_set_id: string,
+    name: string
+    gender: string
+    ratings: {
+      tee_set_side: string,
+      course_rating: number,
+      slope_rating: number,
+      course_handicap: number,
+      course_handicap_display: number,
+      par: number
+    }[]
+  }[]
+}
+
+const getPlayerCourseHandicap = async (ghin: string, courseId: string) => {
+  try {
+    const token = await login();
+    const { data: { tee_sets } } = await ghinGaxios.request<GetPlayerCourseHandicapResponse>({
+      method: 'GET',
+      url: `/course_handicaps.json?golfer_id=${ghin}&course_id=${courseId}`,
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return tee_sets;
+  } catch (e) {
+    logger.warn('there was an error getting associatons from GHIN API')
+    throw e
+  }
+}
+
 
 
 export default {
@@ -328,5 +361,6 @@ export default {
   searchPlayers,
   getClubGolfers,
   getAssociations,
-  getAssociationCourses
+  getAssociationCourses,
+  getPlayerCourseHandicap
 }

@@ -5,10 +5,9 @@ optimizations
 - bump hardware $$$
 
 cleanup
-- make a makeSuccess/Error handler
-- move toArray methods to model
-- figure out contest router vs scorecard
 - mongo id field
+- unused collections and indexes
 
 todo
  - config
+ - schema versioning

@@ -44,6 +44,17 @@ interface GETContest {
   Reply: APIResponse<GetContest>
 }
 
+/**
+ * PATCH start contest
+ */
+
+interface PATCHStartContest {
+  Params: {
+    contestId: string
+  },
+  Reply: APIResponse<GetContest>
+}
+
 
 /**
  * GET ryder cup contests
@@ -59,17 +70,7 @@ interface GETContest {
 //   Reply: APIResponse<GetRyderCupContests>
 // }
 
-/**
- * POST start contest
- */
 
-//  interface PatchStartContestReply {}
-// interface PATCHStartContest {
-//   Params: {
-//     contestId: string
-//   },
-//   Reply: APIResponse<PatchStartContestReply>
-// }
 
 /**
  * GET contest scorecards
@@ -203,6 +204,24 @@ const contestRouter: FastifyPluginCallback = async (server) => {
     }
   });
 
+  server.route<PATCHStartContest>({
+    method: 'PATCH',
+    url: '/contests/:contestId/start',
+    preValidation: [middleware.verifyUser],
+    schema: contestSchema.patchStartContest.schema,
+    handler: async (req) => {
+      try {
+        const { params: { contestId } } = req;
+        const data = await contestHandler.startContest(contestId);
+        logger.info('success POST /contest/:contestId/start', contestId)
+        return { data, success: true }
+      } catch (e) {
+        logger.error('error POST /contest', e)
+        return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
+      }
+    }
+  });
+
   // server.route({
   //   method: 'GET',
   //   url: '/contests/stream',
@@ -257,23 +276,7 @@ const contestRouter: FastifyPluginCallback = async (server) => {
   //   }
   // })
 
-  // server.route<PATCHStartContest>({
-  //   method: 'PATCH',
-  //   url: '/contests/:contestId/start',
-  //   preValidation: [middleware.verifyUser],
-  //   schema: contestSchema.postStartContest.schema,
-  //   handler: async (req) => {
-  //     try {
-  //       const { params: { contestId } } = req;
-  //       await contestHandler.startContest(contestId);
-  //       logger.info('success POST /contest/:contestId/start', contestId)
-  //       return { data: {}, success: true }
-  //     } catch (e) {
-  //       logger.error('error POST /contest', e)
-  //       return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
-  //     }
-  //   }
-  // });
+
 
   // server.route<GETContestScorecard>({
   //   method: 'GET',

@@ -3,24 +3,13 @@ import { RouteShorthandOptions } from "fastify"
 import { MAX_STRING_LENGTH } from "./contest-schema"
 import genericSchema from "./generic-schema"
 
-const patchScorecardTees: RouteShorthandOptions = {
+const postScorecard: RouteShorthandOptions = {
   schema: {
     headers: genericSchema.headerAuth,
-    params: {
-      type: 'object',
-      required: [ 'scorecardId' ],
-      maxProperties: 1,
-      properties: {
-        scorecardId: {
-          type: 'string',
-          format: 'uuid'
-        }
-      }
-    },
     body: {
       type: 'object',
-      required: [ 'tees', 'gender' ],
-      maxProperties: 2,
+      required: [ 'tees', 'gender', 'contestId' ],
+      maxProperties: 3,
       properties: {
         tees: {
           type: 'string',
@@ -29,6 +18,10 @@ const patchScorecardTees: RouteShorthandOptions = {
         gender: {
           type: 'string',
           maxLength: MAX_STRING_LENGTH
+        },
+        contestId: {
+          type: 'string',
+          format: 'uuid'
         }
       }
     }
@@ -36,5 +29,5 @@ const patchScorecardTees: RouteShorthandOptions = {
 }
 
 export default {
-  patchScorecardTees,
+  postScorecard,
 }
