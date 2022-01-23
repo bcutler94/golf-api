@@ -1,5 +1,6 @@
 import { v4 } from "uuid";
 import contestModel from "../models/contest-model";
+import courseModel from "../models/course-model";
 import scorecardModel, { ScorecardModel } from "../models/scorecard-model";
 import userModel from "../models/user-model";
 import ghinApi from "../networking/ghin-api";
@@ -13,7 +14,8 @@ const createScorecard = async (userId: string, contestId: string, tees: string, 
     throw new Error ()
   }
 
-  const courseTees = await ghinApi.getPlayerCourseHandicap(user.ghin, courseId);
+  const { externalId } = await courseModel.getCourseById(courseId, { externalId: 1 })
+  const courseTees = await ghinApi.getPlayerCourseHandicap(user.ghin, externalId);
   const courseTee = courseTees.find(tee => tee.name === tees && tee.gender === gender);
   const courseRatingInfo = courseTee?.ratings.find(rating => rating.tee_set_side.includes('18'));
   const courseHandicap = courseRatingInfo?.course_handicap;

@@ -1,5 +1,5 @@
 import { v4 } from "uuid"
-import contestModel, { BestBallMatchPlay, BestBallMatchPlayLeaderboard, ContestModel, ContestTypes, GetContest, IndividualStrokePlay, IndividualStrokePlayLeaderboard, RyderCupContest, ScoringTypes, SingleDayContests, SingleMatchup, SinglesMatchPlay, SinglesMatchPlayLeaderboard, TeamMatchup } from "../models/contest-model"
+import contestModel, { BestBallMatchPlay, BestBallMatchPlayLeaderboard, ContestModel, ContestTypes, GetContest, IndividualStrokePlay, IndividualStrokePlayLeaderboard, RyderCupContest, RyderCupLeaderboard, ScoringTypes, SingleDayContests, SingleMatchup, SinglesMatchPlay, SinglesMatchPlayLeaderboard, TeamMatchup } from "../models/contest-model"
 import leaderboardModel from "../models/leaderboard-model";
 import { ScorecardModel, TeamScorecard } from "../models/scorecard-model";
 import logger from "../util/logger";
@@ -116,7 +116,7 @@ const addPlayerToChildContest = (contest: SingleDayContests, userId: string, tea
   }
 }
 
-
+// TODO clean this fucking method up jesus
 const createContest = async (userId: string, contest: ContestCreation) => {
 
   let contestInput: ContestModel;
@@ -156,10 +156,16 @@ const createContest = async (userId: string, contest: ContestCreation) => {
         const contestData = await contestModel.getContest(contest.ryderCupContestId);
         switch (contestData.type) {
           case 'multi-day':
+
+
             const { 
               contest: { teams: [ team1, team2 ] }, 
               childContests 
             } = contestData;
+
+            // add contestId to parent
+            contestData.contest.contestIds.push(bestBallContest.id)
+            await contestModel.replaceContests([contestData.contest])
 
             // add name
             bestBallContest.name = `Session ${childContests.length + 1}`;
@@ -227,6 +233,10 @@ const createContest = async (userId: string, contest: ContestCreation) => {
               childContests 
             } = contestData;
 
+            // add contestId to parent
+            contestData.contest.contestIds.push(singlesContest.id)
+            await contestModel.replaceContests([contestData.contest])
+
             // add name
             singlesContest.name = `Session ${childContests.length + 1}`;
 
@@ -285,6 +295,10 @@ const createContest = async (userId: string, contest: ContestCreation) => {
               contest: { teams: [ team1, team2 ] }, 
               childContests 
             } = contestData;
+
+            // add contestId to parent
+            contestData.contest.contestIds.push(individualStrokeContest.id)
+            await contestModel.replaceContests([contestData.contest])
 
             // add name
             individualStrokeContest.name = `Session ${childContests.length + 1}`;
@@ -358,6 +372,76 @@ const joinTeam = async (contestId: string, userId: string): Promise<GetContest> 
   return await contestModel.getContest(contestId);
 }
 
+const attachLeaderboardToContest = (contest: ContestModel): void => {
+  switch (contest.type) {
+    case 'ryder-cup':
+      const { contestIds, teams: [ team1Id, team2Id ] } = contest;
+      const ryderCupLeaderboard: RyderCupLeaderboard = contestIds.map(contestId => {
+        return {
+          contestId,
+          teamScores: {
+            [team1Id.id]: 0,
+            [team2Id.id]: 0,
+          }
+        }
+      });
+      contest.leaderboard = ryderCupLeaderboard;
+      return;
+    case 'best-ball-match-play':
+      const { teamMatchups } = contest
+      const bestBallleaderboard: BestBallMatchPlayLeaderboard = teamMatchups.map(([ team1, team2 ]) => {
+        return {
+          thru: 0,
+          holesUp: 0,
+          winningTeamId: team1.teamId,
+          losingTeamId: team2.teamId,
+          isFinal: false,
+          isDormi: false
+        }
+      });
+      contest.leaderboard = bestBallleaderboard;
+      return;
+    case 'singles-match-play':
+      const { singleMatchups } = contest;
+      const singlesMatchPlayLeaderboard: SinglesMatchPlayLeaderboard = singleMatchups.map(([ player1, player2 ]) => {
+        return {
+          thru: 0,
+          holesUp: 0,
+          winningPlayerId: player1.playerId,
+          losingPlayerId: player2.playerId,
+          isFinal: false,
+          isDormi: false
+        }
+      })
+      contest.leaderboard = singlesMatchPlayLeaderboard;
+      return
+    case 'individual-stroke-play':
+      const { players } = contest
+      const individualStrokePlayLeaderboard: IndividualStrokePlayLeaderboard = players.map(player => {
+        return {
+          ...player,
+          score: 0
+        }
+      })
+      contest.leaderboard = individualStrokePlayLeaderboard
+      return;
+  }
+}
+
+const attachLeaderboardToContestData = (contestData: GetContest): void => {
+  switch (contestData.type) {
+    case 'single-day':
+      attachLeaderboardToContest(contestData.contest);
+      break;
+    case 'multi-day':
+      attachLeaderboardToContest(contestData.contest);
+      break;
+    default:
+      logger.error('dont know how to start contest type', contestData)
+      throw new Error ()
+  }
+}
+
 /**
  * Mark contest as active if it isn't already, create scorecards, create leaderboards for contest + parent contest
  * @param contestId 
@@ -373,62 +457,13 @@ const startContest = async (contestId: string): Promise<GetContest> => {
 
   // do some validation here?
 
-  // create leaderboard
-  switch (contestData.type) {
-    case 'single-day':
-
-      switch (contestData.contest.type) {
-        case 'best-ball-match-play':
-
-          const { contest: { teamMatchups } } = contestData
-          const bestBallleaderboard: BestBallMatchPlayLeaderboard = teamMatchups.map(([ team1, team2 ]) => {
-            return {
-              thru: 0,
-              holesUp: 0,
-              winningTeamId: team1.teamId,
-              losingTeamId: team2.teamId,
-              isFinal: false,
-              isDormi: false
-            }
-          });
-          await contestModel.replaceContests([ { ...contestData.contest, status: 'active', leaderboard: bestBallleaderboard } ]);
-
-          break;
-        case 'individual-stroke-play':
-
-          const { contest: { players } } = contestData
-          const individualStrokePlayLeaderboard: IndividualStrokePlayLeaderboard = players.map(player => {
-            return {
-              ...player,
-              score: 0
-            }
-          })
-          await contestModel.replaceContests([ { ...contestData.contest, status: 'active', leaderboard: individualStrokePlayLeaderboard } ]);
-
-          break;
-        case 'singles-match-play':
-
-          const { contest: { singleMatchups } } = contestData
-          const singlesMatchPlayLeaderboard: SinglesMatchPlayLeaderboard = singleMatchups.map(([ player1, player2 ]) => {
-            return {
-              thru: 0,
-              holesUp: 0,
-              winningPlayerId: player1.playerId,
-              losingPlayerId: player2.playerId,
-              isFinal: false,
-              isDormi: false
-            }
-          })
-          await contestModel.replaceContests([ { ...contestData.contest, status: 'active', leaderboard: singlesMatchPlayLeaderboard } ]);
-        
-          break;
-      }
-
-      break;
-    case 'multi-day':
-    default:
-      logger.error('dont know how to start contest type', contestData.type)
-      throw new Error ()
+  attachLeaderboardToContestData(contestData);
+  if (contestData.type === 'single-day' && contestData.contest.ryderCupContestId) {
+    const ryderCupContestData = await contestModel.getContest(contestData.contest.ryderCupContestId);
+    attachLeaderboardToContestData(ryderCupContestData);
+    await contestModel.replaceContests([{...contestData.contest, status: 'active' }, { ...ryderCupContestData.contest, status: 'active' }])
+  } else {
+    await contestModel.replaceContests([{...contestData.contest, status: 'active' }])
   }
 
   return await contestModel.getContest(contestId);

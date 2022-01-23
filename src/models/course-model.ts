@@ -158,10 +158,74 @@ const getTees = async (courseId: string): Promise<CourseTees> => {
   return course
 }
 
+type CourseModelKeys = Extract<keyof CourseModel, string>
+
+type Projection = {
+  [key in CourseModelKeys]: 1 | -1
+}
+
+const getCourseById = async (courseId: string, projection?: Partial<Projection>): Promise<CourseModel> => {
+  const collection = await getCourseCollection();
+  const course = await collection.findOne({ id: courseId }, { projection })
+  if (!course) {
+    logger.error(`there was an error getting tee info for courseId ${courseId}`)
+    throw new Error ("We couldn't find the tee set information for the course you are playing. Please try again later.");
+  }
+  return course
+}
+
+export type CourseByTees = Pick<CourseModel, 'id' | 'fullName' | 'teeInfo'>
+
+const getCourseByTees = async (courseId: string, tees: string, gender: string): Promise<CourseByTees> => {
+  const collection = await getCourseCollection();
+  const aggCursor = await collection.aggregate<CourseByTees>([
+    {
+      '$match': {
+        'id': courseId
+      }
+    }, {
+      '$project': {
+        'id': 1, 
+        'fullName': 1, 
+        'teeInfo': {
+          '$filter': {
+            'input': '$teeInfo', 
+            'as': 'tee', 
+            'cond': {
+              '$and': [
+                {
+                  '$eq': [
+                    tees, '$$tee.name'
+                  ]
+                }, {
+                  '$eq': [
+                    gender, '$$tee.gender'
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]);
+
+  const [ course ] = await aggCursor.toArray();
+
+  if (!course || !course.teeInfo) {
+    logger.error('we couldnt find the course by tees and gender', courseId, tees, gender)
+    throw new Error()
+  }
+
+  return course;
+}
+
 export default {
   createCourse,
   searchCourse,
   geolocateCourses,
   getTees,
-  getCourseCollection
+  getCourseCollection,
+  getCourseById,
+  getCourseByTees
 }

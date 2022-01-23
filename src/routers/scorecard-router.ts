@@ -60,7 +60,7 @@ const scorecardRouter: FastifyPluginCallback = async (server) => {
     method: 'GET',
     url: '/scorecards/contest/:contestId',
     preValidation: [middleware.verifyUser],
-    schema: scorecardSchema.postScorecard.schema,
+    schema: scorecardSchema.getScorecard.schema,
     handler: async (req) => {
       try {
         const { params: { contestId }, user: { userId } } = req;

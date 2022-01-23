@@ -4,7 +4,7 @@ import middleware from "../util/middleware";
 import courseSchema from "../schemas/course-schema";
 import { APIResponse } from "../server";
 import logger from "../util/logger";
-import { CourseSearchView, CourseTees } from "../models/course-model";
+import { CourseByTees, CourseModel, CourseSearchView, CourseTees } from "../models/course-model";
 
 /**
  * GET search courses
@@ -40,6 +40,18 @@ interface GETCourseTeeRoute {
     courseId: string
   }
   Reply: APIResponse<GetCourseTeesResponse>
+}
+
+/**
+ * GET get your course (for scoring)
+ */
+interface GETCourseByTees {
+  Params: {
+    courseId: string
+    tees: string
+    gender: string
+  }
+  Reply: APIResponse<{ course: CourseByTees }>
 }
  
 
@@ -94,6 +106,24 @@ const courseRouter: FastifyPluginCallback = async (server) => {
         return { success: true, data: { tees } }
       } catch (e) {
         logger.error('error GET /courses/:courseId/tees', e)
+        return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
+      }
+    }
+  })
+
+  server.route<GETCourseByTees>({
+    method: 'GET',
+    url: '/courses/:courseId/tees/:tees/gender/:gender',
+    preValidation: [middleware.verifyUser],
+    schema: courseSchema.getCourseByTees.schema,
+    handler: async (req) => {
+      try {
+        const { params: { courseId, tees, gender } } = req;
+        const course = await courseHandler.getCourseByTees(courseId, tees, gender)
+        logger.info('success GET /courses/:courseId/tees/:tees/gender/:gender', courseId, tees, gender)
+        return { success: true, data: { course } }
+      } catch (e) {
+        logger.error('error GET /courses/:courseId/tees/:tees/gender/:gender', e)
         return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
       }
     }

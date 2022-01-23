@@ -9,6 +9,7 @@ import courseRouter from './routers/course-router';
 import playerRouter from './routers/players-router';
 import throng from 'throng';
 import scorecardRouter from './routers/scorecard-router';
+import Etag from 'fastify-etag';
 
 interface SuccessResponse<JSON> {
   success: true
@@ -32,6 +33,7 @@ server.setErrorHandler((e, request, rep) => {
 })
 server.register(require('fastify-compress'))
 server.register(jwt, { secret: process.env.JWT_SECRET || 'theMostSecretKeyOfAllFuckingTime' });
+server.register(Etag)
 
 /**
  * Test Route

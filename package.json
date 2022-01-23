@@ -25,6 +25,7 @@
     "esbuild-node-externals": "^1.4.0",
     "fastify": "^3.22.1",
     "fastify-compress": "^4.0.0",
+    "fastify-etag": "^2.1.0",
     "fastify-jwt": "^4.1.0",
     "gaxios": "^4.3.2",
     "mongodb": "^4.2.2",

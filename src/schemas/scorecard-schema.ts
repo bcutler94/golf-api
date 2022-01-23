@@ -8,8 +8,8 @@ const postScorecard: RouteShorthandOptions = {
     headers: genericSchema.headerAuth,
     body: {
       type: 'object',
-      required: [ 'tees', 'gender', 'contestId' ],
-      maxProperties: 3,
+      required: [ 'tees', 'gender', 'contestId', 'courseId' ],
+      maxProperties: 4,
       properties: {
         tees: {
           type: 'string',
@@ -22,12 +22,36 @@ const postScorecard: RouteShorthandOptions = {
         contestId: {
           type: 'string',
           format: 'uuid'
+        },
+        courseId: {
+          type: 'string',
+          format: 'uuid'
         }
       }
     }
   }
 }
 
+const getScorecard: RouteShorthandOptions = {
+  schema: {
+    headers: genericSchema.headerAuth,
+    params: {
+      type: 'object',
+      required: [ 'contestId' ],
+      maxProperties: 1,
+      properties: {
+        contestId: {
+          type: 'string',
+          format: 'uuid'
+        }
+      }
+    }
+  }
+}
+
+
+
 export default {
   postScorecard,
+  getScorecard
 }
