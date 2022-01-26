@@ -35,6 +35,22 @@ interface GETScorecard {
   }>
 }
 
+/**
+ * PATCH add score to scorevcard
+ */
+ interface PATCHScore {
+  Params: {
+    scorecardId: string
+  }
+  Body: {
+    score: number
+    holeIndex: number
+  }
+  Reply: APIResponse<{
+    scorecard: ScorecardModel
+  }>
+}
+
 const scorecardRouter: FastifyPluginCallback = async (server) => {
 
 
@@ -50,7 +66,7 @@ const scorecardRouter: FastifyPluginCallback = async (server) => {
         logger.info('success POST /scorecards/:scorecardId', userId, contestId, tees, gender)
         return { data: { scorecard }, success: true }
       } catch (e) {
-        logger.error('success POST /scorecards/:scorecardId', e)
+        logger.error('ERROR POST /scorecards/:scorecardId', e)
         return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
       }
     }
@@ -68,7 +84,25 @@ const scorecardRouter: FastifyPluginCallback = async (server) => {
         logger.info('success GET /scorecards/contest/:contestId', contestId, userId)
         return { data: { scorecard }, success: true }
       } catch (e) {
-        logger.error('success GET /scorecards/contest/:contestId', e)
+        logger.error('ERROR GET /scorecards/contest/:contestId', e)
+        return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
+      }
+    }
+  });
+
+  server.route<PATCHScore>({
+    method: 'PATCH',
+    url: '/scorecards/:scorecardId',
+    preValidation: [middleware.verifyUser],
+    schema: scorecardSchema.patchScore.schema,
+    handler: async (req) => {
+      try {
+        const { body: { score, holeIndex }, params: { scorecardId } } = req;
+        const scorecard = await scorecardHandler.scoreHole(scorecardId, score, holeIndex)
+        logger.info('success PATCH /scorecards/:scorecardId', scorecardId, score, holeIndex)
+        return { data: { scorecard }, success: true }
+      } catch (e) {
+        logger.error('ERROR POST /scorecards/:scorecardId', e)
         return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }
       }
     }

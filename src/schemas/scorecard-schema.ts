@@ -49,9 +49,44 @@ const getScorecard: RouteShorthandOptions = {
   }
 }
 
+const patchScore: RouteShorthandOptions = {
+  schema: {
+    headers: genericSchema.headerAuth,
+    params: {
+      type: 'object',
+      required: [ 'scorecardId' ],
+      maxProperties: 1,
+      properties: {
+        scorecardId: {
+          type: 'string',
+          format: 'uuid'
+        }
+      }
+    },
+    body: {
+      type: 'object',
+      required: [ 'score', 'holeIndex' ],
+      maxProperties: 2,
+      properties: {
+        score: {
+          type: 'number',
+          max: 50,
+          min: 1
+        },
+        holeIndex: {
+          type: 'number',
+          max: 17,
+          min: 0
+        }
+      }
+    }
+  }
+}
+
 
 
 export default {
   postScorecard,
-  getScorecard
+  getScorecard,
+  patchScore
 }

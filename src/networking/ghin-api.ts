@@ -319,20 +319,22 @@ const getAssociationCourses = async (associationId: number): Promise<GHINAssocia
   }
 }
 
-interface GetPlayerCourseHandicapResponse {
-  tee_sets: {
-    tee_set_id: string,
-    name: string
-    gender: string
-    ratings: {
-      tee_set_side: string,
-      course_rating: number,
-      slope_rating: number,
-      course_handicap: number,
-      course_handicap_display: number,
-      par: number
-    }[]
+type TeeSets = {
+  tee_set_id: string,
+  name: string
+  gender: string
+  ratings: {
+    tee_set_side: string,
+    course_rating: number,
+    slope_rating: number,
+    course_handicap: number,
+    course_handicap_display: number,
+    par: number
   }[]
+}[]
+
+interface GetPlayerCourseHandicapResponse {
+  tee_sets?: TeeSets
 }
 
 const getPlayerCourseHandicap = async (ghin: string, courseId: string) => {
