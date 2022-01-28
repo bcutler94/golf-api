@@ -9,9 +9,9 @@ ghinGaxios.instance.defaults = {
   baseURL: GHIN_URL,
   retry: true,
   retryConfig: {
-    // retryDelay: 10,
+    retryDelay: 10,
     onRetryAttempt: (err) => logger.warn(`Error retrying message [${err.message}], code ${err.code}`),
-    // shouldRetry: () => true
+    shouldRetry: () => true
   },
   responseType: 'json'
 }
@@ -20,12 +20,14 @@ interface LoginResponse {
   token: string
 }
 
+let APItoken: string | null = null
 /**
  * Logins into GHIN API and retrieves the token needed to hit other endpoints
  * @returns 
  */
 const login = async (): Promise<string> => {
   try {
+    if (APItoken) return APItoken
     const { data: { token } } = await ghinGaxios.request<LoginResponse>({
       method: 'POST',
       url: '/users/login.json',
@@ -36,7 +38,8 @@ const login = async (): Promise<string> => {
         }
       }
     });
-    return token;
+    APItoken = token
+    return APItoken;
   } catch (e) {
     logger.error('there was an error logging into GHIN API')
     throw e
@@ -161,6 +164,13 @@ export interface GHINHole {
   Allocation:	number
 }
 
+export interface GHINRating {
+  RatingType:	string
+  CourseRating:	number
+  SlopeRating:	number
+  BogeyRating: number
+}
+
 export interface GetCourseInfoResponse {
   Season: {
     SeasonName: string
@@ -169,11 +179,7 @@ export interface GetCourseInfoResponse {
     IsAllYear: boolean
   }
   TeeSets: Array<{
-    Ratings: Array<{
-      RatingType:	string
-      CourseRating:	number
-      SlopeRating:	number
-    }>
+    Ratings: Array<GHINRating>
     Holes: Array<GHINHole>
     TeeSetRatingId:	number
     TeeSetRatingName:	string

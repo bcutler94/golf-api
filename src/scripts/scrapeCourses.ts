@@ -1,6 +1,7 @@
 import { v4 } from "uuid";
-import courseModel, { CourseModel, HoleInfo, TeeInfo } from "../models/course-model";
-import ghinApi, { GetCourseInfoResponse, GHINAssociationCourse, GHINCourse, GHINHole } from "../networking/ghin-api"
+import courseModel, { CourseModel, HoleInfo, RatingInfo, TeeInfo } from "../models/course-model";
+import ghinApi, { GetCourseInfoResponse, GHINAssociationCourse, GHINCourse, GHINHole, GHINRating } from "../networking/ghin-api"
+import pubsub, { JOB_NAMES } from "../pubsub/pubsub";
 import logger from "../util/logger";
 
 const stateAbbreviations = [
@@ -15,13 +16,25 @@ const toHoleInfo = (ghinHoles: Array<GHINHole>): Array<HoleInfo> =>  {
   return ghinHoles.map(hole => {
     return {
       number: hole.Number,
-      length: hole.Number,
+      length: hole.Length,
       par: hole.Par,
       handicap: hole.Allocation
     }
   })
-
 }
+
+const toRatingInfo = (ghinRating: Array<GHINRating>): Array<RatingInfo> =>  {
+  // @ts-ignore
+  return ghinRating.map(rating => {
+    return {
+      type: rating.RatingType,
+      courseRating: rating.CourseRating,
+      slopeRating: rating.SlopeRating,
+      bogeyRating: rating.BogeyRating
+    }
+  })
+}
+
 
 const toTeeInfo = (courseInfo: GetCourseInfoResponse): Array<TeeInfo> => {
   const { TeeSets } = courseInfo;
@@ -33,7 +46,8 @@ const toTeeInfo = (courseInfo: GetCourseInfoResponse): Array<TeeInfo> => {
       totalMeters: set.TotalMeters,
       totalPar: set.TotalPar,
       gender: set.Gender,
-      holeInfo: toHoleInfo(set.Holes)
+      holeInfo: toHoleInfo(set.Holes),
+      ratingInfo: toRatingInfo(set.Ratings)
     }
   })
 }
@@ -90,25 +104,26 @@ const toCourseModelV2 = (course: GHINAssociationCourse, courseInfo: GetCourseInf
   }
 }
 
-// const run = async () => {
-//   let successCount = 0;
-//   let errorCount = 0;
-//   for (const state of stateAbbreviations) {
-//     const courses = await ghinApi.getCourses(state);
-//     for (const course of courses) {
-//       try {
-//         const courseInfo = await ghinApi.getCourseInfo(course.CourseID.toString())
-//         await courseModel.createCourse(toCourseModel(course, courseInfo))
-//         logger.info(`succesfully persisted course ${course.CourseID} ${course.CourseName}`)
-//         successCount++
-//       } catch (e) {
-//         logger.error(`failed to persist course ${course.CourseID} ${course.CourseName}`)
-//         errorCount++
-//       }
-//     }
-//   }
-//   logger.info(`DONE, persisted ${successCount} out of ${successCount + errorCount} at ${(successCount / (successCount + errorCount)) * 100}%`)
-// }
+const run = async () => {
+  let successCount = 0;
+  let errorCount = 0;
+  for (const state of stateAbbreviations) {
+    const courses = await ghinApi.getCourses(state);
+    const promises = courses.map( async (course) => {
+      try {
+        const courseInfo = await ghinApi.getCourseInfo(course.CourseID)
+        await courseModel.createCourse(toCourseModel(course, courseInfo))
+        logger.info(`succesfully persisted course ${course.CourseID} ${course.CourseName}`)
+        successCount++
+      } catch (e) {
+        logger.error(`failed to persist course ${course.CourseID} ${course.CourseName}`)
+        errorCount++
+      }
+    })
+    await Promise.all(promises)
+  }
+  logger.info(`DONE, persisted ${successCount} out of ${successCount + errorCount} at ${(successCount / (successCount + errorCount)) * 100}%`)
+}
 
 const runV2 = async () => {
   const associations = await ghinApi.getAssociations();
@@ -122,6 +137,16 @@ const runV2 = async () => {
   }
 }
 
+const runV3 = async () => {
+  const agenda = await pubsub.getPubSub();
+  console.log(stateAbbreviations.length)
+  for (const state of stateAbbreviations) {
+    await agenda.now(JOB_NAMES.processCourses, { state })
+  }
+}
+
 export default {
-  runV2
+  runV2,
+  run,
+  runV3 
 }

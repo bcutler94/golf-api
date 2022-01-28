@@ -14,25 +14,22 @@ const createScorecard = async (userId: string, contestId: string, tees: string, 
     throw new Error ()
   }
 
-  const { externalId, teeInfo } = await courseModel.getCourseById(courseId, { externalId: 1, teeInfo: 1 })
-  const courseTees = await ghinApi.getPlayerCourseHandicap(user.ghin, externalId);
-  logger.info('coursetees', courseTees)
-  const courseTee = courseTees?.find(tee => tee.name === tees && tee.gender === gender);
-  const courseRatingInfo = courseTee?.ratings.find(rating => rating.tee_set_side.includes('18'));
-  const courseHandicap = courseRatingInfo?.course_handicap;
-  if (courseHandicap === undefined) {
-    logger.warn('we couldnt find the courseHandicap for the user so we are defaulting to current', userId)
-  }
-
+  const { teeInfo } = await courseModel.getCourseById(courseId, { externalId: 1, teeInfo: 1 })
   const courseTeeInfo = teeInfo.find(tee => tee.name === tees && tee.gender === gender);
   if (!courseTeeInfo) {
     logger.error('cant find tee info for course', userId, contestId, tees, gender, courseId)
     throw new Error()
   }
 
-  // Course Handicap = Handicap Index × (Slope Rating ÷ 113) + (Course Rating – Par)
+  const ratingInfo = courseTeeInfo.ratingInfo.find(ri => ri.type === 'Total');
+  if (!ratingInfo) {
+    logger.error('cant find rating info for course', userId, contestId, tees, gender, courseId)
+    throw new Error()
+  }
 
-  logger.info('coursetee info', courseTeeInfo)
+  // Course Handicap = Handicap Index × (Slope Rating ÷ 113) + (Course Rating – Par)
+  const { hi_value } = await ghinApi.getUser(user.ghin)
+  const courseHandicap = Math.ceil(hi_value * (ratingInfo.slopeRating / 133) + (ratingInfo.courseRating - courseTeeInfo.totalPar))
 
   // calculate shots given per hole
   const userCourseHandicap = (courseHandicap ?? Math.ceil(user.currentHandicap)) || 0
@@ -64,7 +61,7 @@ const createScorecard = async (userId: string, contestId: string, tees: string, 
     tees,
     gender,
     courseId,
-    scores: [],
+    scores,
     playerId: userId,
     contestId,
     courseHandicap: courseHandicap ?? user.currentHandicap

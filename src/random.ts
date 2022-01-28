@@ -19,9 +19,7 @@ const scriptToRun = async () => {
   await pubsub.startPubSub({ attachListeners: false })
   // insert here below here
 
-  // const user = await userModel.getUser('ec083151-e8bb-49a8-abb4-6b93bf000854');
-  // const data = await ghinApi.getPlayerCourseHandicap(user?.ghin, '11256')
-  // logger.info(data[0])
+  await scrapeCourses.runV3()
   
 }
 
@@ -33,5 +31,6 @@ const start = async () => {
 }
 
 start()
+  .then(() => process.exit(1))
 
 export default start

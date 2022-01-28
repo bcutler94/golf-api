@@ -8,6 +8,12 @@ export interface HoleInfo {
   handicap: number
 }
 
+export interface RatingInfo {
+  type: "Total" | "Front" | "Back"
+  courseRating: number
+  slopeRating: number
+  bogeyRating: number
+}
 export interface TeeInfo {
   name: string
   numHoles: number
@@ -16,6 +22,7 @@ export interface TeeInfo {
   totalPar: number
   gender: string
   holeInfo: Array<HoleInfo>
+  ratingInfo: Array<RatingInfo>
 }
 
 export interface CourseModel {
@@ -56,6 +63,10 @@ const COURSE_INDEXES: IndexDescription[] = [
   },
   {
     key: { 'location.geo': '2dsphere' }
+  },
+  {
+    key: { externalId: 1 },
+    unique: true
   }
 ]
 

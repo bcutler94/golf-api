@@ -23,7 +23,8 @@ interface ErrorResponse {
 
 export type APIResponse<JSON> = SuccessResponse<JSON> | ErrorResponse
 
-const server = fastify();
+const server = fastify({
+});
 /**
  * Register hooks/middleware
  */
@@ -38,7 +39,7 @@ server.register(Etag)
 /**
  * Test Route
  */
-server.get('/test', async (req, rep) => rep.send('yo ben'))
+server.get('/test', async () => 'yo ben')
 
 /**
  * User Router

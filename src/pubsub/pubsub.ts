@@ -3,10 +3,7 @@ import database, { uri } from "../data-layer/database";
 import os from 'os'
 import logger from "../util/logger";
 import processGolfers from "./jobs/process-golfers";
-
-export const JOBS = {
-  processGolfers: 'process-golfers'
-}
+import processCourses from "./jobs/process-courses";
 
 const AGENDA_NAME = os.hostname + "-" + process.pid;
 const CONCURRENCY = os.cpus().length;
@@ -22,13 +19,19 @@ const DEFAULT_OPTIONS = {
 }
 
 export const JOB_NAMES = {
-  processGolfers: 'process-golfers'
+  processGolfers: 'process-golfers',
+  processCourses: 'process-courses'
 }
 
 const PUBSUBJOBS: PubSubJob[] = [
   {
     name: JOB_NAMES.processGolfers,
     pubsubjob: (data: any) => processGolfers(data),
+    options: DEFAULT_OPTIONS
+  },
+  {
+    name: JOB_NAMES.processCourses,
+    pubsubjob: (data: any) => processCourses(data),
     options: DEFAULT_OPTIONS
   }
 ]

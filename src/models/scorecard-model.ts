@@ -80,13 +80,26 @@ const getContestScorecard = async (contestId: string, playerId: string): Promise
 
 const scoreHole = async (scorecardId: string, score: number, holeIndex: number): Promise<ScorecardModel> => {
   const collection = await getScorecardCollection();
+
+  const projection = await collection.findOne({ id: scorecardId }, { projection: { scores: 1 } });
+  if (!projection) {
+    logger.error('cant find score')
+    throw new Error()
+  }
+
+  console.log('projections', projection)
+
   const { value } = await collection.findOneAndUpdate(
     { id: scorecardId },
-    { $set: {
-      [`scores.${holeIndex}.grossStrokes`]: score,
-      [`scores.${holeIndex}.netStrokes`]: '$$netStrokes'
-    } },
-    { returnDocument: 'after', let: { netStrokes: { $subtract: [ `scores.${holeIndex}.grossStrokes`, `scores.${holeIndex}.shotsGiven`] } } }
+    {
+      $set: {
+        [`scores.${holeIndex}.netStrokes`]: score - projection.scores[0].shotsGiven,
+        [`scores.${holeIndex}.grossStrokes`]: score,
+      }
+    },
+    { 
+      returnDocument: 'after',
+    }
   );
   if (!value) {
     logger.error('couldnt find scorecard to score', scorecardId, score, holeIndex)
