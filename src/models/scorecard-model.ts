@@ -44,10 +44,6 @@ const LEADERBOARD_INDEXES: IndexDescription[] = [
   {
     key: { playerId: 1, contestId: 1 },
     unique: true
-  },
-  {
-    key: { teamId: 1, contestId: 1 },
-    unique: true
   }
 ]
 

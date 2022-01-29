@@ -1,62 +1,63 @@
 import { v4 } from "uuid";
-import contestModel, { BestBallMatchPlay, ContestModel, RyderCupContest, SinglesMatchPlay } from "../models/contest-model";
+import contestModel, { BestBallMatchPlay, ContestModel, ContestTypes, RyderCupContest, SinglesMatchPlay } from "../models/contest-model";
+import courseModel from "../models/course-model";
+import userModel from "../models/user-model";
+import contestHandler, { ContestCreation } from "../route-handlers/contest-handler";
+import courseHandler from "../route-handlers/course-handler";
+import scorecardHandler from "../route-handlers/scorecard-handler";
+import logger from "../util/logger";
 
 
-let amount = 100;
-const myUserId = 'ec083151-e8bb-49a8-abb4-6b93bf000854'
-const courseId = '4a33b3e8-fb52-499f-a7b5-a19f34444cd3'
+const createRyderCupContest = async (): Promise<ContestModel> => {
 
-const createContests = async () => {
+  const collection = await userModel.getUserCollection();
+  const users = await collection.find({ ghin: {$ne: '2617288' }}, { limit: 15 }).toArray();
+  const team1users = users.slice(0, 7).map(u => u.id);
+  const team2users = users.slice(7, 15).map(u => u.id);
+  const me = await collection.findOne({ ghin: '2617288' })
+  me?.id && team1users.push(me.id);
 
-  const ryderCupContests: RyderCupContest[] = [];
-
-  for (let i = 0; i < amount; i++) {
-    const ryder: RyderCupContest = {
-      type: 'ryder-cup',
-      id: v4(),
-      contestIds: [],
-      adminIds: [myUserId],
-      name: 'Test Ryder' + i,
-      status: 'queued',
-      leaderboardId: null,
-      teams: []
-    }
-    ryderCupContests.push(ryder)
-  }
-
-  const contests: ContestModel[] = [ ...ryderCupContests ];
-
-  for (const ryder of ryderCupContests) {
-    const bestBall: BestBallMatchPlay = {
-      type: 'best-ball-match-play',
-      id: v4(),
-      adminIds: [myUserId],
-      name: 'Test Best Ball',
-      status: 'queued',
-      leaderboardId: null,
-      ryderCupContestId: ryder.id,
-      courseId,
-      scoringType: Math.random() < 0.5 ? 'gross' : 'net',
-      teamMatchups: []
-    }
-    const singleMatch: SinglesMatchPlay = {
-      type: 'singles-match-play',
-      id: v4(),
-      adminIds: [myUserId],
-      name: 'Test Singles',
-      status: 'queued',
-      leaderboardId: null,
-      ryderCupContestId: ryder.id,
-      courseId,
-      scoringType: Math.random() < 0.5 ? 'gross' : 'net',
-      singleMatchups: []
-    }
-    contests.push(bestBall)
-    contests.push(singleMatch)
-  }
-
-  const c = await contestModel.getContestCollection()
-  await c.insertMany(contests)
+  return await contestModel.createContest({
+    type: 'ryder-cup',
+    teams: [
+      { id: v4(), captainId: team1users[0], userIds: team1users, name: 'USA' },
+      { id: v4(), captainId: team2users[0], userIds: team2users, name: "EUROPE" }
+    ],
+    leaderboard: {},
+    contestIds: [],
+    id: v4(),
+    status: 'queued',
+    adminIds: [],
+    name: 'Ryder Test 1'
+  })
 }
 
-export default createContests
+const createContest = async (contestParams: ContestCreation) => {
+  const collection = await userModel.getUserCollection();
+  const me = await collection.findOne({ ghin: '2617288' })
+  return await contestHandler.createContest(me?.id || '', contestParams);
+}
+
+const createDummyContest = async (types: ContestTypes[], withRyder: boolean) => {
+  if (withRyder) {
+    const rc = await createRyderCupContest();
+    const cc = await courseModel.getCourseCollection();
+    const [ { id: courseId, teeInfo } ] = await cc.find({}, { limit: 1, skip: Math.floor(Math.random() * 15000)}).toArray()
+    const contests = types.map(type => createContest({ type, courseId, scoringType: 'net', name: `${type}`, ryderCupContestId: rc.id }));
+    const childContests = await Promise.all(contests);
+
+    logger.info(rc.type)
+    if (rc.type !== 'ryder-cup') return;
+
+    const playerIds = [ ...rc.teams[0].userIds, ...rc.teams[1].userIds ];
+    for (const ccc of childContests) {
+      for (const playerId of playerIds) {
+        logger.info(ccc.id, playerId)
+        await scorecardHandler.createScorecard(playerId, ccc.id, teeInfo[0].name, teeInfo[0].gender, courseId)
+      }
+    }
+  }
+  logger.info('done creating contests')
+}
+
+export default createDummyContest

@@ -7,12 +7,12 @@ const GHIN_PASSWORD = 'Liverpool13'
 
 ghinGaxios.instance.defaults = {
   baseURL: GHIN_URL,
-  retry: true,
-  retryConfig: {
-    retryDelay: 10,
-    onRetryAttempt: (err) => logger.warn(`Error retrying message [${err.message}], code ${err.code}`),
-    shouldRetry: () => true
-  },
+  // retry: true,
+  // retryConfig: {
+  //   retryDelay: 10,
+  //   onRetryAttempt: (err) => logger.warn(`Error retrying message [${err.message}], code ${err.code}`),
+  //   shouldRetry: () => true
+  // },
   responseType: 'json'
 }
 

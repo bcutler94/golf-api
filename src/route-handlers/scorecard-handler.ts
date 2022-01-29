@@ -28,8 +28,8 @@ const createScorecard = async (userId: string, contestId: string, tees: string, 
   }
 
   // Course Handicap = Handicap Index × (Slope Rating ÷ 113) + (Course Rating – Par)
-  const { hi_value } = await ghinApi.getUser(user.ghin)
-  const courseHandicap = Math.ceil(hi_value * (ratingInfo.slopeRating / 133) + (ratingInfo.courseRating - courseTeeInfo.totalPar))
+  // const { hi_value } = await ghinApi.getUser(user.ghin)
+  const courseHandicap = Math.ceil(user.currentHandicap * (ratingInfo.slopeRating / 133) + (ratingInfo.courseRating - courseTeeInfo.totalPar))
 
   // calculate shots given per hole
   const userCourseHandicap = (courseHandicap ?? Math.ceil(user.currentHandicap)) || 0
@@ -43,6 +43,7 @@ const createScorecard = async (userId: string, contestId: string, tees: string, 
   })
   let idx = 0;
   while (userCH !== 0) {
+    logger.info('userCH', userCH, userCourseHandicap)
     const { handicap } = courseTeeInfo.holeInfo[idx];
     if (userCourseHandicap > 0 && handicap <= userCourseHandicap) {
       scores[idx].shotsGiven = scores[idx].shotsGiven + 1
@@ -53,20 +54,6 @@ const createScorecard = async (userId: string, contestId: string, tees: string, 
     }
     idx = idx % 17 + 1
   }
-
-  // // do we need to create team scorecard?
-  // const contest = await contestModel.getContestById(contestId);
-  // if (contest.type === 'best-ball-match-play') {
-  //   contest.teamMatchups.find(matchup => )
-  //   return await scorecardModel.createScorecard({
-  //     id: v4(),
-  //     type: 'team',
-  //     teamId: '',
-  //     courseId,
-  //     scores,
-  //     contestId,
-  //   })  
-  // }
 
   return await scorecardModel.createScorecard({
     id: v4(),
@@ -175,7 +162,7 @@ const scoreSinglesMatchPlayContest = async (contest: SinglesMatchPlay, playerId:
   let isFinal = false;
   let isDormi = false;
   while (thru <= 17) {
-    const canScoreHole = playerIds.every(playerId => Number.isInteger(playerIdToScorecard[playerId].scores[thru].netStrokes));
+    const canScoreHole = playerIds.every(playerId => playerIdToScorecard[playerId].scores[thru].netStrokes > 0);
     if (!canScoreHole) break;
 
     // get player1score
@@ -304,7 +291,7 @@ const scoreBestBallContest = async (contest: BestBallMatchPlay, playerId: string
   let isDormi = false;
   while (thru <= 17) {
     // can we score the hole?
-    const canScoreHole = playerIds.every(playerId => Number.isInteger(playerIdToScorecard[playerId].scores[thru].netStrokes));
+    const canScoreHole = playerIds.every(playerId => playerIdToScorecard[playerId].scores[thru].netStrokes > 0);
     if (!canScoreHole) break;
 
     // get team1 best score

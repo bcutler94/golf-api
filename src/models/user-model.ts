@@ -46,6 +46,7 @@ const getUser = async (userId: string): Promise<UserModel | undefined> => {
 }
 
 export default {
+  getUserCollection,
   createUser,
   getUser
 }
