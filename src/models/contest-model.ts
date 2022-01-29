@@ -55,15 +55,14 @@ type Teams = [
 ]
 
 export type RyderCupLeaderboard = { 
-  contestId: string,
-  teamScores: {
-    [teamId: string]: number
-  }
-}[]
+  [teamId: string]: number
+}
 export interface RyderCupContest extends MultiDayContestBase {
   type: 'ryder-cup'
   teams: Teams
-  leaderboard: RyderCupLeaderboard
+  leaderboard: {
+    [contestId: string]: RyderCupLeaderboard
+  }
 }
 
 interface StrokePlayPlayer {
@@ -89,17 +88,21 @@ export type TeamMatchup = [
 
 
 export type BestBallMatchPlayLeaderboard = {
-  thru: number,
-  holesUp: number,
+  thru: number
+  holesUp: number
   winningTeamId: string
   losingTeamId: string
   isFinal: boolean
   isDormi: boolean
-}[]
+}
 export interface BestBallMatchPlay extends SingleDayContestBase {
   type: 'best-ball-match-play'
-  teamMatchups: TeamMatchup[]
-  leaderboard: BestBallMatchPlayLeaderboard
+  leaderboard: {
+    [matchupId: string]: BestBallMatchPlayLeaderboard
+  }
+  teamMatchups: {
+    [matchupId: string]: TeamMatchup
+  }
 }
 
 export type SingleMatchup = [
@@ -114,11 +117,15 @@ export type SinglesMatchPlayLeaderboard = {
   losingPlayerId: string
   isFinal: boolean
   isDormi: boolean
-}[]
+}
 export interface SinglesMatchPlay extends SingleDayContestBase {
   type: 'singles-match-play'
-  singleMatchups: SingleMatchup[]
-  leaderboard: SinglesMatchPlayLeaderboard
+  singleMatchups: {
+    [matchupId: string]: SingleMatchup
+  }
+  leaderboard: {
+    [matchupId: string]: SinglesMatchPlayLeaderboard
+  }
 }
 
 export type SingleDayContests = SinglesMatchPlay | BestBallMatchPlay | IndividualStrokePlay
@@ -233,72 +240,23 @@ const replaceContests = async (newContests: ContestModel[]): Promise<void> => {
   }
 }
 
-// const joinTeam = async (contestId: string, userId: string, teamId: string) => {
-//   const collection = await getContestCollection();
-//   const contest = await collection.findOne({ contestId }, { projection: { teams: 1 } });
-// }
-
-// const getRyderCupContests = async (ryderCupContestId: string): Promise<ContestModel[]> => {
-//   const collection = await getContestCollection();
-//   return await collection.find({ ryderCupContestId }).toArray()
-// }
-
-// const getContestCourse = async (contestId: string): Promise<CourseModel> => {
-//   const collection = await getContestCollection();
-//   const [ { course } = { course: null } ] = await collection.aggregate<{ course: CourseModel | undefined }>([
-//     {
-//       '$match': {
-//         'id': contestId,
-//       }
-//     }, {
-//       '$lookup': {
-//         'from': 'courses', 
-//         'localField': 'courseId', 
-//         'foreignField': 'id', 
-//         'as': 'course'
-//       }
-//     }, {
-//       '$project': {
-//         '_id': 0, 
-//         'course': {
-//           '$first': '$course'
-//         }
-//       }
-//     }
-//   ]).toArray();
-//   if (!course) {
-//     logger.error(`there was an error trying to find contest course for contestId [${contestId}]`)
-//     throw new Error ('There was an error retrieving course information. Please try again later.')
-//   }
-//   return course;
-// }
-
-// const getCourseId = async (contestId: string): Promise<string> => {
-//   const collection = await getContestCollection();
-//   const contest = await collection.findOne({ id: contestId }, { projection: { courseId: 1 }});
-//   if (!contest) {
-//     logger.error(`1) couldnt find courseId for contestId [${contestId}]`);
-//     throw new Error ('A course does not exist for this contest. Please try again later. (1)')
-//   }
-//   if (contest.courseId) {
-//     return contest.courseId
-//   } else {
-//     logger.error(`2) couldnt find courseId for contestId [${contestId}]`);
-//     throw new Error ('A course does not exist for this contest. Please try again later. (2)')
-//   }
-// }
-
-// const joinRyderContest = async (contestId: string, ) => {
-//   const collection = await getContestCollection();
-//   const { value } = await collection.findOneAndUpdate({ id: contestId }, { })
-// }
+const getContestById = async (contestId: string): Promise<ContestModel> => {
+  const collection = await getContestCollection();
+  const contest = await collection.findOne({ id: contestId });
+  if (!contest) {
+    logger.error('couldnt find contest by id ', contestId)
+    throw new Error()
+  }
+  return contest;
+}
 
 export default {
   getContestCollection,
   createContest,
   getUserContests,
   getContest,
-  replaceContests
+  replaceContests,
+  getContestById,
   // joinTeam,
   // getContestCourse,
   // getCourseId,

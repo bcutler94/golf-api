@@ -26,12 +26,13 @@ export interface PlayerScorecard extends BaseScorecard {
   courseHandicap: number | null
 }
 
-export interface TeamScorecard extends BaseScorecard {
-  type: 'team'
-  teamId: string
-}
+// export interface TeamScorecard extends BaseScorecard {
+//   type: 'team'
+//   teamId: string
+// }
 
-export type ScorecardModel = PlayerScorecard | TeamScorecard
+export type ScorecardModel = PlayerScorecard 
+// | TeamScorecard
 
 
 const getScorecardCollection = async () => {
@@ -87,8 +88,6 @@ const scoreHole = async (scorecardId: string, score: number, holeIndex: number):
     throw new Error()
   }
 
-  console.log('projections', projection)
-
   const { value } = await collection.findOneAndUpdate(
     { id: scorecardId },
     {
@@ -108,9 +107,15 @@ const scoreHole = async (scorecardId: string, score: number, holeIndex: number):
   return value;
 }
 
+// const getPlayersContestScorecards = async (contestId: string, playerIds: string[]): Promise<ScorecardModel[]> => {
+//   const collection = await getScorecardCollection();
+//   return collection.find({ contestId, playerId: { $in: playerIds }} );
+// }
+
 
 export default {
   createScorecard,
   getContestScorecard,
-  scoreHole
+  scoreHole,
+  getScorecardCollection
 }

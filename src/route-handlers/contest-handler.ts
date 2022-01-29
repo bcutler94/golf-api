@@ -1,7 +1,5 @@
 import { v4 } from "uuid"
 import contestModel, { BestBallMatchPlay, BestBallMatchPlayLeaderboard, ContestModel, ContestTypes, GetContest, IndividualStrokePlay, IndividualStrokePlayLeaderboard, RyderCupContest, RyderCupLeaderboard, ScoringTypes, SingleDayContests, SingleMatchup, SinglesMatchPlay, SinglesMatchPlayLeaderboard, TeamMatchup } from "../models/contest-model"
-import leaderboardModel from "../models/leaderboard-model";
-import { ScorecardModel, TeamScorecard } from "../models/scorecard-model";
 import logger from "../util/logger";
 interface ContestCreationBase {
   type: ContestTypes
@@ -47,7 +45,7 @@ const addPlayerToChildContest = (contest: SingleDayContests, userId: string, tea
 
       // try and add player to team matchup that may not have a player yet
       let addedSinglePlayer = false;
-      for (const [ player1, player2 ] of singleMatchups) {
+      for (const [ player1, player2 ] of Object.values(singleMatchups)) {
         if (player1.teamId === teamId) {
           if (!player1.playerId) {
             player1.playerId = userId;
@@ -65,7 +63,7 @@ const addPlayerToChildContest = (contest: SingleDayContests, userId: string, tea
 
       // otherwise just create new entry and add player
       if (!addedSinglePlayer) {
-        singleMatchups[singleMatchups.length] = [
+        singleMatchups[v4()] = [
           { playerId: userId, teamId },
           { playerId: '', teamId: otherTeamId }
         ]
@@ -78,7 +76,7 @@ const addPlayerToChildContest = (contest: SingleDayContests, userId: string, tea
 
       // try and add player to team matchup that may not have a player yet
       let addedTeamPlayer = false;
-      for (const [ team1, team2 ] of teamMatchups) {
+      for (const [ team1, team2 ] of Object.values(teamMatchups)) {
         if (team1.teamId === teamId) {
           if (!team1.player1Id) {
             team1.player1Id = userId;
@@ -106,7 +104,7 @@ const addPlayerToChildContest = (contest: SingleDayContests, userId: string, tea
 
       // otherwise just create new entry and add player
       if (!addedTeamPlayer) {
-        teamMatchups[teamMatchups.length] = [
+        teamMatchups[v4()] = [
           { player1Id: userId, player2Id: '', teamId },
           { player1Id: '', player2Id: '', teamId: otherTeamId },
         ]
@@ -133,19 +131,19 @@ const createContest = async (userId: string, contest: ContestCreation) => {
         adminIds: [ userId ],
         name: contest.name,
         status: 'queued',
-        leaderboard: []
+        leaderboard: {}
       }
       contestInput = ryderCupContest;
       break;
     case 'best-ball-match-play': {
       const bestBallContest: BestBallMatchPlay = {
         type: 'best-ball-match-play',
-        teamMatchups: [],
+        teamMatchups: {},
         id: v4(),
         adminIds: [ userId ],
         name: contest.name,
         status: 'queued',
-        leaderboard: [],
+        leaderboard: {},
         courseId: contest.courseId,
         scoringType: contest.scoringType,
         ryderCupContestId: contest.ryderCupContestId
@@ -173,7 +171,7 @@ const createContest = async (userId: string, contest: ContestCreation) => {
             // build teams
             const team1userIds = [ ...team1.userIds ];
             const team2userIds = [ ...team2.userIds ];
-            const teamMatchups: TeamMatchup[] = []
+            const teamMatchups: { [key: string]: TeamMatchup } = {}
             while (team1userIds.length || team2userIds.length) {
 
               // get players for team 1
@@ -197,7 +195,7 @@ const createContest = async (userId: string, contest: ContestCreation) => {
                 { player1Id: team2player1, player2Id: team2player2, teamId: team2.id }
               ];
 
-              teamMatchups.push(teamMatchup)
+              teamMatchups[v4()] = teamMatchup
             }
             bestBallContest.teamMatchups = teamMatchups;
 
@@ -212,12 +210,12 @@ const createContest = async (userId: string, contest: ContestCreation) => {
     case 'singles-match-play':
       const singlesContest: SinglesMatchPlay = {
         type: 'singles-match-play',
-        singleMatchups: [],
+        singleMatchups: {},
         id: v4(),
         adminIds: [ userId ],
         name: contest.name,
         status: 'queued',
-        leaderboard: [],
+        leaderboard: {},
         courseId: contest.courseId,
         scoringType: contest.scoringType,
         ryderCupContestId: contest.ryderCupContestId
@@ -243,7 +241,7 @@ const createContest = async (userId: string, contest: ContestCreation) => {
             // build teams
             const team1userIds = [ ...team1.userIds ];
             const team2userIds = [ ...team2.userIds ];
-            const singleMatchups: SingleMatchup[] = []
+            const singleMatchups: { [key: string]: SingleMatchup } = {}
             while (team1userIds.length || team2userIds.length) {
 
               // get players for team 1
@@ -262,7 +260,7 @@ const createContest = async (userId: string, contest: ContestCreation) => {
                 { playerId: team2player1, teamId: team2.id },
               ];
 
-              singleMatchups.push(singleMatchup)
+              singleMatchups[v4()] = singleMatchup
             }
             singlesContest.singleMatchups = singleMatchups;
 
@@ -376,43 +374,43 @@ const attachLeaderboardToContest = (contest: ContestModel): void => {
   switch (contest.type) {
     case 'ryder-cup':
       const { contestIds, teams: [ team1Id, team2Id ] } = contest;
-      const ryderCupLeaderboard: RyderCupLeaderboard = contestIds.map(contestId => {
-        return {
-          contestId,
-          teamScores: {
-            [team1Id.id]: 0,
-            [team2Id.id]: 0,
-          }
+      const ryderCupLeaderboard: { [contestId: string]: RyderCupLeaderboard } = {}
+      contestIds.forEach(contestId => {
+        ryderCupLeaderboard[contestId] = {
+          [team1Id.id]: 0,
+          [team2Id.id]: 0,
         }
       });
       contest.leaderboard = ryderCupLeaderboard;
       return;
     case 'best-ball-match-play':
       const { teamMatchups } = contest
-      const bestBallleaderboard: BestBallMatchPlayLeaderboard = teamMatchups.map(([ team1, team2 ]) => {
-        return {
+      const bestBallleaderboard: { [key: string]: BestBallMatchPlayLeaderboard } = {}
+      for (const matchupId in teamMatchups) {
+        bestBallleaderboard[matchupId] = {
           thru: 0,
           holesUp: 0,
-          winningTeamId: team1.teamId,
-          losingTeamId: team2.teamId,
+          winningTeamId: '',
+          losingTeamId: '',
           isFinal: false,
           isDormi: false
         }
-      });
+      }
       contest.leaderboard = bestBallleaderboard;
       return;
     case 'singles-match-play':
       const { singleMatchups } = contest;
-      const singlesMatchPlayLeaderboard: SinglesMatchPlayLeaderboard = singleMatchups.map(([ player1, player2 ]) => {
-        return {
+      const singlesMatchPlayLeaderboard: { [key: string]: SinglesMatchPlayLeaderboard } = {}
+      for (const matchupId in singleMatchups) {
+        singlesMatchPlayLeaderboard[matchupId] = {
           thru: 0,
           holesUp: 0,
-          winningPlayerId: player1.playerId,
-          losingPlayerId: player2.playerId,
+          winningPlayerId: '',
+          losingPlayerId: '',
           isFinal: false,
           isDormi: false
         }
-      })
+      }
       contest.leaderboard = singlesMatchPlayLeaderboard;
       return
     case 'individual-stroke-play':
