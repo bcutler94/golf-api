@@ -24,6 +24,7 @@ interface ErrorResponse {
 export type APIResponse<JSON> = SuccessResponse<JSON> | ErrorResponse
 
 const server = fastify({
+  http2: true
 });
 /**
  * Register hooks/middleware
@@ -78,9 +79,4 @@ const start = async () => {
   })
 }
 
-start()
-
-// throng({
-//   worker: start,
-//   workers: 1
-// })
+!!process.env.SHOULD_THREAD ? throng(start) : start()
