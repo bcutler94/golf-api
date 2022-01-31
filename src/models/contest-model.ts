@@ -37,6 +37,7 @@ interface BaseContest {
   adminIds: string[]
   name: string
   status: ContestStatuses
+  userIds: string[]
 }
 
 export interface MultiDayContestBase extends BaseContest {
@@ -150,14 +151,16 @@ const createContest = async (contest: ContestModel): Promise<ContestModel> => {
 
 const getUserContests = async (userId: string): Promise<ContestModel[]> => {
   const collection = await getContestCollection();
+  logger.info('userif', userId)
   return await collection.find({ 
-    $or: [
-      { $expr: { $in: [ userId, { $ifNull: ['$adminIds', [] ] } ] } },
-      { $expr: { $in: [ userId, { $ifNull: ['$userIds', [] ] } ] } },
-      { $expr: { $in: [ userId, { $ifNull: ['$team.userIds', [] ] } ] } },
-      { $expr: { $in: [ userId, { $ifNull: ['$teamMatchups.teams.userIds', [] ] } ] } },
-      { $expr: { $eq: [ userId, { $ifNull: ['$singleMatchups.user.userId', [] ] } ] } },
-    ],
+    // $or: [
+    //   { 'teams.userIds': userId },
+    //   { 'adminIds': userId },
+    //   { 'teamMatchups.team'}
+    //   { $expr: { $in: [ userId, { $ifNull: ['$teamMatchups.teams.userIds', [] ] } ] } },
+    //   { $expr: { $eq: [ userId, { $ifNull: ['$singleMatchups.user.userId', [] ] } ] } },
+    // ],
+    userIds: userId,
     ryderCupContestId: null
   }).toArray()
 }

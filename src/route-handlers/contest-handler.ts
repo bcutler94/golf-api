@@ -34,10 +34,12 @@ export type ContestCreation =  RyderCupCreation | IndividualStrokePlayCreation |
 
 const addPlayerToChildContest = (contest: SingleDayContests, userId: string, teamId: string, otherTeamId: string): SingleDayContests => {
 
-  const { type } = contest;
+  const { type, userIds } = contest;
+  userIds.push(userId);
+
   switch (type) {
     case 'individual-stroke-play':
-      const { players } = contest
+      const { players, userIds } = contest
       players.push({ playerId: userId, teamId });
       return contest;
     case 'singles-match-play':
@@ -76,29 +78,40 @@ const addPlayerToChildContest = (contest: SingleDayContests, userId: string, tea
 
       // try and add player to team matchup that may not have a player yet
       let addedTeamPlayer = false;
-      for (const [ team1, team2 ] of Object.values(teamMatchups)) {
+      for (const matchupId in teamMatchups) {
+
+        const [ team1, team2 ] = teamMatchups[matchupId]
+
+        // add to team 1
         if (team1.teamId === teamId) {
+
           if (!team1.player1Id) {
             team1.player1Id = userId;
             addedTeamPlayer = true
             break;
           }
-          if (!team2.player1Id) {
-            team2.player1Id = userId;
+
+          if (!team1.player2Id) {
+            team1.player2Id = userId;
             addedTeamPlayer = true;
             break;
           }
+
+        // add to team 2
         } else {
-          if (!team1.player1Id) {
-            team1.player1Id = userId;
-            addedTeamPlayer = true;
-            break;
-          }
+
           if (!team2.player1Id) {
             team2.player1Id = userId;
             addedTeamPlayer = true;
             break;
           }
+
+          if (!team2.player2Id) {
+            team2.player2Id = userId;
+            addedTeamPlayer = true;
+            break;
+          }
+
         }
       }
 
@@ -131,7 +144,8 @@ const createContest = async (userId: string, contest: ContestCreation) => {
         adminIds: [ userId ],
         name: contest.name,
         status: 'queued',
-        leaderboard: {}
+        leaderboard: {},
+        userIds: [ userId ]
       }
       contestInput = ryderCupContest;
       break;
@@ -146,7 +160,8 @@ const createContest = async (userId: string, contest: ContestCreation) => {
         leaderboard: {},
         courseId: contest.courseId,
         scoringType: contest.scoringType,
-        ryderCupContestId: contest.ryderCupContestId
+        ryderCupContestId: contest.ryderCupContestId,
+        userIds: [ userId ]
       }
 
       // pull ryder contest info if it exists
@@ -157,9 +172,12 @@ const createContest = async (userId: string, contest: ContestCreation) => {
 
 
             const { 
-              contest: { teams: [ team1, team2 ] }, 
+              contest: { teams: [ team1, team2 ], userIds }, 
               childContests 
             } = contestData;
+
+            // pull over userIds
+            bestBallContest.userIds = userIds
 
             // add contestId to parent
             contestData.contest.contestIds.push(bestBallContest.id)
@@ -218,7 +236,8 @@ const createContest = async (userId: string, contest: ContestCreation) => {
         leaderboard: {},
         courseId: contest.courseId,
         scoringType: contest.scoringType,
-        ryderCupContestId: contest.ryderCupContestId
+        ryderCupContestId: contest.ryderCupContestId,
+        userIds: [ userId ]
       }
 
       // pull ryder contest info if it exists
@@ -227,9 +246,12 @@ const createContest = async (userId: string, contest: ContestCreation) => {
         switch (contestData.type) {
           case 'multi-day':
             const { 
-              contest: { teams: [ team1, team2 ] }, 
+              contest: { teams: [ team1, team2 ], userIds }, 
               childContests 
             } = contestData;
+
+            // add userIds
+            singlesContest.userIds = userIds;
 
             // add contestId to parent
             contestData.contest.contestIds.push(singlesContest.id)
@@ -282,7 +304,8 @@ const createContest = async (userId: string, contest: ContestCreation) => {
         leaderboard: [],
         courseId: contest.courseId,
         scoringType: contest.scoringType,
-        ryderCupContestId: contest.ryderCupContestId
+        ryderCupContestId: contest.ryderCupContestId,
+        userIds: [ userId ]
       }
       // pull ryder contest info if it exists
       if (contest.ryderCupContestId) {
@@ -290,9 +313,11 @@ const createContest = async (userId: string, contest: ContestCreation) => {
         switch (contestData.type) {
           case 'multi-day':
             const { 
-              contest: { teams: [ team1, team2 ] }, 
+              contest: { teams: [ team1, team2 ], userIds }, 
               childContests 
             } = contestData;
+
+            individualStrokeContest.userIds = userIds
 
             // add contestId to parent
             contestData.contest.contestIds.push(individualStrokeContest.id)
@@ -329,7 +354,10 @@ const joinTeam = async (contestId: string, userId: string): Promise<GetContest> 
   switch (contestData.type) {
     case 'multi-day':
       const { contest, childContests } = contestData
-      const { teams } = contest;
+      const { teams, userIds } = contest;
+
+      // add user to userIds
+      userIds.push(userId)
 
       // make sure not in any teams
       for (const team of teams) {
@@ -469,153 +497,10 @@ const startContest = async (contestId: string): Promise<GetContest> => {
 }
 
 
-
-          // // export type TeamMatchup = [
-          // //   { player1: string, player2: string, teamId: string },
-          // //   { player1: string, player2: string, teamId: string },
-          // // ]
-
-          // // scorecards
-          // const teamScorecards: ScorecardModel[] = teamMatchups.reduce((scorecards, matchup) => {
-          //   const matchupScorecards: ScorecardModel[] = [];
-          //   const [ team1, team2 ] = matchup;
-          //   matchupScorecards.push({
-          //     id: v4(),
-          //     contestId,
-          //     type:  
-          //   })
-
-
-          // }, [])
-          // // const scorecards: ScorecardModel = teamMatchups.map
-
-// const startContest = async (contestId: string): Promise<void> => {
-//   const client = await database.getClient();
-//   const session = client.startSession();
-//   try {
-//     // this doesn't need to be transaction but i thought it might have to be so im just leaving this for now
-//     await session.withTransaction( async () => {
-
-//       const contestCollection = await contestModel.getContestCollection();
-
-//       // get contest status to make sure we can do shit with it
-//       const contest = await contestCollection.findOne({ id: contestId }, { session })
-//       if (!contest) {
-//         logger.error(`this contest [${contestId}] doesn't exist`)
-//         await session.abortTransaction()
-//         return null;
-//       }
-//       if (contest.status !== 'queued') {
-//         logger.error(`this contest [${contestId}] doesnt't have a status of queued so we can't start it`)
-//         await session.abortTransaction()
-//         return null;
-//       }
-//       if (contest.type === 'parent') {
-//         logger.error(`this contest [${contestId}] can't start because it's a parent contest`)
-//         await session.abortTransaction()
-//         return null;
-//       }
-
-      
-//       if (contest.type === 'child') {
-
-//         // TODO make sure that no other children contests are active
-
-//         // make parent contest active
-//         const { modifiedCount } = await contestCollection.updateOne({ id: contest.parentContestId }, { $set: { status: 'active' } }, { session });
-//         if (!modifiedCount) {
-//           await session.abortTransaction();
-//           logger.info(`this contest [${contestId}] error when updating the status`)
-//           return null
-//         }
-//       }
-//       // make contest active
-//       const { modifiedCount } = await contestCollection.updateOne({ id: contestId }, { $set: { status: 'active' } }, { session });
-//       if (!modifiedCount) {
-//         await session.abortTransaction();
-//         logger.info(`this contest [${contestId}] error when updating the status`)
-//         return null
-//       }
-
-//     });
-//   } catch (e) {
-//     logger.error('there was an error committing session to create contest', e);
-//     throw e
-//   } finally {
-//     await session.endSession()
-//   }
-// }
-
-// const getScorecard = async (contestId: string, userId: string): Promise<ScorecardModel | null> => {
-//   return await scorecardModel.getScorecard(contestId, userId)
-// }
-
-// const createScorecard = async (contestId: string, userId: string): Promise<ScorecardModel> => {
-//   const courseId = await contestModel.getCourseId(contestId);
-//   const scorecardInput: ScorecardModel = {
-//     id: v4(),
-//     participantId: userId,
-//     type: 'player',
-//     contestId,
-//     scores: [],
-//     tees: null,
-//     courseHandicap: null,
-//     gender: null,
-//     courseId
-//   }
-//   return await scorecardModel.createScorecard(scorecardInput)
-// }
-
-// const getCourse = async (contestId: string): Promise<CourseModel> => {
-//   return await contestModel.getContestCourse(contestId)
-// }
-
-// const joinContest = async (contestId: string, userId: string, teamName: string): Promise<ContestWithChildren> => {
-
-//   const { 
-//     participants: { 
-//       awayTeam: { name: awayTeam, playerIds: awayIds }, 
-//       homeTeam: { name: homeTeam, playerIds: homeIds } 
-//     },
-//     childContests
-//   } = await getChildContests(contestId)
-
-//   const collection = await contestModel.getContestCollection();
-
-//   const batchUpdates: AnyBulkWriteOperation<ContestModel>[] = [];
-//   switch (teamName) {
-//     case awayTeam:
-//       batchUpdates.push({ updateOne: { filter: { id: contestId }, update: { $push: { 'participants.homeTeam.playerIds': userId }}}});
-//       childContests.forEach(contest => {
-//         switch(contest.participantType) {
-//           case 'best-ball-match-play':
-//             contest.participants
-//             break;
-//         }
-//       })
-//       break;
-//     case homeTeam:
-//       await collection.updateOne({ id: contestId }, { $push: { 'participants.homeTeam.playerIds': userId } })
-//       break;
-//     default:
-//       logger.error(`the teamName can't be found on contestId [${contestId}] for userId [${userId}] for teamName [${teamName}]`)
-//       throw new Error ('Something went wrong joining a team. Please try again later.')
-//   }
-
-//   return await getChildContests(contestId)
-// }
-
 export default {
   createContest,
   getContest,
   getUserContests,
   joinTeam,
   startContest,
-  // getChildContests,
-  // getScorecard,
-  // createScorecard,
-  // getCourse,
-  // getRyderCupContests,
-  // getUserContestsStream
-
 }

@@ -5,6 +5,7 @@ import logger from "../util/logger";
 import { ScorecardModel } from "../models/scorecard-model";
 import scorecardSchema from "../schemas/scorecard-schema";
 import scorecardHandler from "../route-handlers/scorecard-handler";
+import { ContestModel } from "../models/contest-model";
 
 
 /**
@@ -48,6 +49,7 @@ interface GETScorecard {
   }
   Reply: APIResponse<{
     scorecard: ScorecardModel
+    contest: ContestModel
   }>
 }
 
@@ -98,9 +100,9 @@ const scorecardRouter: FastifyPluginCallback = async (server) => {
     handler: async (req) => {
       try {
         const { body: { score, holeIndex }, params: { scorecardId } } = req;
-        const scorecard = await scorecardHandler.scoreHole(scorecardId, score, holeIndex)
+        const { scorecard, contest } = await scorecardHandler.scoreHole(scorecardId, score, holeIndex)
         logger.info('success PATCH /scorecards/:scorecardId', scorecardId, score, holeIndex)
-        return { data: { scorecard }, success: true }
+        return { data: { scorecard, contest }, success: true }
       } catch (e) {
         logger.error('ERROR POST /scorecards/:scorecardId', e)
         return { success: false, errorMessage: e instanceof Error ? e.message : 'An error occurred' }

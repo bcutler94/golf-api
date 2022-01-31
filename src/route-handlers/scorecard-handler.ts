@@ -28,7 +28,8 @@ const createScorecard = async (userId: string, contestId: string, tees: string, 
   }
 
   // Course Handicap = Handicap Index × (Slope Rating ÷ 113) + (Course Rating – Par)
-  // const { hi_value } = await ghinApi.getUser(user.ghin)
+  // const { hi_value } = await ghinApi.getUser(user.ghin);
+
   const courseHandicap = Math.ceil(user.currentHandicap * (ratingInfo.slopeRating / 133) + (ratingInfo.courseRating - courseTeeInfo.totalPar))
 
   // calculate shots given per hole
@@ -43,12 +44,11 @@ const createScorecard = async (userId: string, contestId: string, tees: string, 
   })
   let idx = 0;
   while (userCH !== 0) {
-    logger.info('userCH', userCH, userCourseHandicap)
     const { handicap } = courseTeeInfo.holeInfo[idx];
     if (userCourseHandicap > 0 && handicap <= userCourseHandicap) {
       scores[idx].shotsGiven = scores[idx].shotsGiven + 1
       userCH--
-    } else if (userCourseHandicap > 0 && handicap <= Math.abs(userCourseHandicap)) {
+    } else if (userCourseHandicap < 0 && handicap <= Math.abs(userCourseHandicap)) {
       scores[idx].shotsGiven = scores[idx].shotsGiven - 1
       userCH++
     }
@@ -74,11 +74,14 @@ const getContestScorecard = async (contestId: string, playerId: string): Promise
 
 const scoreHole = async (scorecardId: string, score: number, holeIndex: number) => {
   const scorecard = await scorecardModel.scoreHole(scorecardId, score, holeIndex);
-  await scoreContestForPlayer(scorecard.contestId, scorecard.playerId);
-
+  const contest = await scoreContestForPlayer(scorecard.contestId, scorecard.playerId);
+  return { 
+    scorecard,
+    contest
+  }
 }
 
-const scoreContestForPlayer = async (contestId: string, playerId: string) => {
+const scoreContestForPlayer = async (contestId: string, playerId: string): Promise<ContestModel> => {
   let contest = await contestModel.getContestById(contestId);
 
   switch (contest.type) {
@@ -92,26 +95,9 @@ const scoreContestForPlayer = async (contestId: string, playerId: string) => {
       // TODO
       break;
   }
-}
 
-// const scoreRyderCupContest = async (ryderCupContestId: string): Promise<RyderCupContest> => {
-//   const ryderContest = await contestModel.getContestById(ryderCupContestId);
-//   if (ryderContest.type !== 'ryder-cup') {
-//     logger.error('trying to score ryder cup contest by its not a ryder cup contest', ryderContest)
-//     throw new Error()
-//   }
-//   const ryderCupContestLeaderboard: RyderCupLeaderboard = {
-//     [ryderContest.teams[0].id]: 0,
-//     [ryderContest.teams[1].id]: 0
-//   }
-//   for (const matchupId in ryderContest.leaderboard) {
-//     const { winningTeamId, isFinal } = ryderContest.leaderboard[matchupId];
-//     if (isFinal) {
-//       ryderCupContestLeaderboard[winningTeamId]++
-//     }
-//   }
-//   return ryderContest
-// }
+  return await contestModel.getContestById(contestId)
+}
 
 /**
  * - find the matchup
@@ -162,7 +148,9 @@ const scoreSinglesMatchPlayContest = async (contest: SinglesMatchPlay, playerId:
   let isFinal = false;
   let isDormi = false;
   while (thru <= 17) {
-    const canScoreHole = playerIds.every(playerId => playerIdToScorecard[playerId].scores[thru].netStrokes > 0);
+
+    const canScoreHole = playerIds.every(playerId => playerIdToScorecard[playerId].scores[thru].grossStrokes > 0);
+
     if (!canScoreHole) break;
 
     // get player1score
@@ -182,11 +170,11 @@ const scoreSinglesMatchPlayContest = async (contest: SinglesMatchPlay, playerId:
     const holesLeft = 17 - thru;
     if (netHoles > holesLeft) {
       isFinal = true;
-      break;
     } else if (netHoles === holesLeft) {
       isDormi = true;
-      break;
     }
+
+    // increment hole
     thru++
   }
 
@@ -194,11 +182,11 @@ const scoreSinglesMatchPlayContest = async (contest: SinglesMatchPlay, playerId:
   let winningPlayerId = '';
   let losingPlayerId = '';
   if (player1holesUp > player2holesUp) {
-    winningPlayerId = team1.teamId
-    losingPlayerId = team2.teamId
+    winningPlayerId = team1.playerId
+    losingPlayerId = team2.playerId
   } else if (player2holesUp > player1holesUp) {
-    winningPlayerId = team2.teamId
-    losingPlayerId = team1.teamId
+    winningPlayerId = team2.playerId
+    losingPlayerId = team1.playerId
   }
 
   leaderboard[singleMatchupId] = {
@@ -210,7 +198,7 @@ const scoreSinglesMatchPlayContest = async (contest: SinglesMatchPlay, playerId:
     isDormi
   }
 
-  const newContests: ContestModel[] = []
+  const newContests: ContestModel[] = [ contest ]
 
   // check if part of ryder cup contest and score
   const { ryderCupContestId } = contest;
@@ -258,7 +246,8 @@ const scoreBestBallContest = async (contest: BestBallMatchPlay, playerId: string
   let teamMatchupId: string = '';
   for (const matchupId in teamMatchups) {
     const [ team1, team2 ] = teamMatchups[matchupId];
-    if (team1.player1Id === playerId || team1.player2Id === playerId || team2.player1Id === playerId || team2.player2Id) {
+
+    if ([ team1.player1Id, team1.player2Id, team2.player1Id, team2.player2Id ].includes(playerId)) {
       teamMatchupId = matchupId;
       break;
     }
@@ -291,7 +280,7 @@ const scoreBestBallContest = async (contest: BestBallMatchPlay, playerId: string
   let isDormi = false;
   while (thru <= 17) {
     // can we score the hole?
-    const canScoreHole = playerIds.every(playerId => playerIdToScorecard[playerId].scores[thru].netStrokes > 0);
+    const canScoreHole = playerIds.every(playerId => playerIdToScorecard[playerId].scores[thru].grossStrokes > 0);
     if (!canScoreHole) break;
 
     // get team1 best score
@@ -318,10 +307,8 @@ const scoreBestBallContest = async (contest: BestBallMatchPlay, playerId: string
     const holesLeft = 17 - thru;
     if (netHoles > holesLeft) {
       isFinal = true;
-      break;
     } else if (netHoles === holesLeft) {
       isDormi = true;
-      break;
     }
     thru++
   }
@@ -348,8 +335,7 @@ const scoreBestBallContest = async (contest: BestBallMatchPlay, playerId: string
     isDormi
   }
 
-  const newContests: ContestModel[] = [];
-  newContests.push(contest)
+  const newContests: ContestModel[] = [contest];
 
   // check if contest is over
   const isContestOver = Object.values(leaderboard).every(({ isFinal }) => isFinal);

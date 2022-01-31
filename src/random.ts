@@ -1,5 +1,6 @@
 import { v4 } from "uuid";
 import database from "./data-layer/database";
+import courseModel from "./models/course-model";
 import playerModel, { PlayerModel } from "./models/player-model";
 import userModel from "./models/user-model";
 import ghinApi, { GHINGolfer } from "./networking/ghin-api";
@@ -20,8 +21,34 @@ const scriptToRun = async () => {
   await database.startDB()
   await pubsub.startPubSub({ attachListeners: false })
   // insert here below here
-  await createContests(['best-ball-match-play', 'individual-stroke-play'], true)
-  // await scoreHoles('cbec7a96-aa53-42c0-b270-dc6a946ee752', 1)
+  // const cc = await courseModel.getCourseCollection();
+  // const cursor = await cc.aggregate([
+  //   {
+  //     '$group': {
+  //       '_id': '$externalId', 
+  //       'count': {
+  //         '$sum': 1
+  //       }
+  //     }
+  //   }, {
+  //     '$sort': {
+  //       'count': -1
+  //     }
+  //   }
+  // ])
+  // const externalIds = new Set<string> ()
+  // await cursor.forEach(doc => {
+  //   if (doc.count > 1) {
+  //     externalIds.add(doc._id)
+  //   }
+  // })
+  // for (const i of externalIds) {
+  //   await cc.deleteOne({ externalId: i })
+  // }
+
+
+  // await createContests(['best-ball-match-play', 'singles-match-play'], true)
+  // await scoreHoles('59cb1aa1-6cbc-4869-a475-74457bd41773', 0)
 }
 
 const start = async () => {
