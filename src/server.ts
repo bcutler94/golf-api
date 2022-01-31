@@ -78,4 +78,9 @@ const start = async () => {
   })
 }
 
-throng(start)
+start()
+
+// throng({
+//   worker: start,
+//   workers: 1
+// })
