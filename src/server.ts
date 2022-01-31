@@ -23,9 +23,7 @@ interface ErrorResponse {
 
 export type APIResponse<JSON> = SuccessResponse<JSON> | ErrorResponse
 
-const server = fastify({
-  http2: true
-});
+const server = fastify();
 /**
  * Register hooks/middleware
  */
