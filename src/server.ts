@@ -1,4 +1,4 @@
-import fastify from 'fastify';
+import fastify, { FastifyServerOptions } from 'fastify';
 import './data-layer/database';
 import jwt from 'fastify-jwt';
 import logger from './util/logger';
@@ -22,6 +22,9 @@ interface ErrorResponse {
 }
 
 export type APIResponse<JSON> = SuccessResponse<JSON> | ErrorResponse
+
+const options: { [key: string]: boolean } = {}
+if (process.env.ENABLE_HTTP2 === 'yes') options.http2 = true;
 
 const server = fastify();
 /**
@@ -77,4 +80,4 @@ const start = async () => {
   })
 }
 
-!!process.env.SHOULD_THREAD ? throng(start) : start()
+process.env.SHOULD_THREAD === 'yes' ? throng(start) : start()
