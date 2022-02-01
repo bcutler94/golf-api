@@ -41,7 +41,10 @@ server.register(Etag)
 /**
  * Test Route
  */
-server.get('/test', async () => 'yo ben')
+server.get('/test', async (_, rep) => {
+  rep.header('Cache-Control', 'public, max-age=86400')
+  return 'yo ben'
+})
 
 /**
  * User Router
