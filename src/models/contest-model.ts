@@ -23,12 +23,19 @@ export const SCORING_TYPE = [
   'net'
 ] as const;
 
+export const TEAM_NAMES = [
+    'USA',
+    'EUROPE'
+]
+
 
 export type ContestTypes = typeof CONTEST_TYPES[number]
 
 export type ScoringTypes = typeof SCORING_TYPE[number]
 
 export type ContestStatuses = typeof CONTEST_STATUSES[number]
+
+export type TeamNames = typeof TEAM_NAMES[number]
 
 
 interface BaseContest {
@@ -50,13 +57,21 @@ export interface SingleDayContestBase extends BaseContest {
   ryderCupContestId?: string
 }
 
-type Teams = [
-  { id: string, name: string, captainId: string, userIds: string[] },
-  { id: string, name: string, captainId: string, userIds: string[] }
-]
+export interface Player {
+  playerId: string
+  displayName: string
+  teamName?: string
+}
+
+type Teams = {
+  [key: TeamNames]: {
+    captain: Player
+    players: Player[]
+  }
+}
 
 export type RyderCupLeaderboard = { 
-  [teamId: string]: number
+  [teamName: TeamNames]: number
 }
 export interface RyderCupContest extends MultiDayContestBase {
   type: 'ryder-cup'
@@ -66,50 +81,49 @@ export interface RyderCupContest extends MultiDayContestBase {
   }
 }
 
-interface StrokePlayPlayer {
-  playerId: string
-  teamId?: string
+interface StrokePlayPlayer extends Player {
+  score: number
+  thru: number
+  teamName?: TeamNames
 }
 
-export type IndividualStrokePlayLeaderboard = {
-  playerId: string,
-  teamId?: string
-  score: number
-}[]
+export type IndividualStrokePlayLeaderboard = StrokePlayPlayer[]
 export interface IndividualStrokePlay extends SingleDayContestBase {
   type: 'individual-stroke-play'
   players: StrokePlayPlayer[]
   leaderboard: IndividualStrokePlayLeaderboard
 }
 
-export type TeamMatchup = [
-  { player1Id: string, player2Id: string, teamId: string },
-  { player1Id: string, player2Id: string, teamId: string },
-]
+export type TeamMatchup = {
+  leaderboard: BestBallMatchPlayLeaderboard
+  teams: {
+    [key: TeamNames]: {
+      players: Player[]
+    }
+  }
+}
 
 
 export type BestBallMatchPlayLeaderboard = {
   thru: number
   holesUp: number
-  winningTeamId: string
-  losingTeamId: string
+  winningTeamName: TeamNames
+  losingTeamName: TeamNames
   isFinal: boolean
   isDormi: boolean
 }
 export interface BestBallMatchPlay extends SingleDayContestBase {
   type: 'best-ball-match-play'
-  leaderboard: {
-    [matchupId: string]: BestBallMatchPlayLeaderboard
-  }
-  teamMatchups: {
-    [matchupId: string]: TeamMatchup
-  }
+  teamMatchups: TeamMatchup[]
 }
 
-export type SingleMatchup = [
-  { playerId: string, teamId: string },
-  { playerId: string, teamId: string }
-]
+
+export type SingleMatchup = {
+  leaderboard: SinglesMatchPlayLeaderboard
+  teams: {
+    [key in TeamNames]: Player
+  }
+}
 
 export type SinglesMatchPlayLeaderboard = {
   thru: number,
@@ -121,12 +135,7 @@ export type SinglesMatchPlayLeaderboard = {
 }
 export interface SinglesMatchPlay extends SingleDayContestBase {
   type: 'singles-match-play'
-  singleMatchups: {
-    [matchupId: string]: SingleMatchup
-  }
-  leaderboard: {
-    [matchupId: string]: SinglesMatchPlayLeaderboard
-  }
+  singleMatchups: SingleMatchup[]
 }
 
 export type SingleDayContests = SinglesMatchPlay | BestBallMatchPlay | IndividualStrokePlay
@@ -260,8 +269,4 @@ export default {
   getContest,
   replaceContests,
   getContestById,
-  // joinTeam,
-  // getContestCourse,
-  // getCourseId,
-  // getRyderCupContests,
 }

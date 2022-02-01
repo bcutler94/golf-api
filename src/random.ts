@@ -7,7 +7,7 @@ import ghinApi, { GHINGolfer } from "./networking/ghin-api";
 import processGolfers from "./pubsub/jobs/process-golfers";
 import pubsub from "./pubsub/pubsub";
 import contestHandler from "./route-handlers/contest-handler";
-import createContests from "./scripts/createContests";
+// import createContests from "./scripts/createContests";
 import createUsers from "./scripts/createUsers";
 import scoreHoles from "./scripts/scoreHole";
 import scrapeCourses from "./scripts/scrapeCourses";

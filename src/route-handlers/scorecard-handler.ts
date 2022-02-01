@@ -107,28 +107,24 @@ const scoreContestForPlayer = async (contestId: string, playerId: string): Promi
  */
 const scoreSinglesMatchPlayContest = async (contest: SinglesMatchPlay, playerId: string) => {
 
-  // find the matchup
-  const { singleMatchups } = contest;
-  let singleMatchupId: string = '';
+  const {
+    singleMatchups
+  } = contest;
 
-  for (const matchupId in singleMatchups) {
-    const [ team1, team2 ] = singleMatchups[matchupId];
-    if (team1.playerId === playerId || team2.playerId === playerId) {
-      singleMatchupId = matchupId;
-      break;
-    }
-  }
-
-  if (!singleMatchupId) {
+  const matchup = contest.singleMatchups.find(sm => sm.teams.EUROPE.playerId === playerId || sm.teams.USA.playerId === playerId );
+  if (!matchup) {
     logger.error('couldnt find players matchup on best ball contest', contest, playerId);
     throw new Error ()
   }
 
-
-  // get the players scorecards
+  const {
+    teams: { 
+      USA: { playerId: usaPlayerId }, 
+      EUROPE: { playerId: europePlayerId } 
+    }
+  } = matchup
   const { id } = contest;
-  const [ team1, team2 ] = singleMatchups[singleMatchupId];
-  const playerIds = [ team1.playerId, team2.playerId ];
+  const playerIds = [ usaPlayerId, matchup.teams.EUROPE.playerId ];
 
   const collection = await scorecardModel.getScorecardCollection();
   const scorecardCursor = await collection.find({ 
@@ -143,8 +139,8 @@ const scoreSinglesMatchPlayContest = async (contest: SinglesMatchPlay, playerId:
 
 
   let thru = 0;
-  let player1holesUp = 0;
-  let player2holesUp = 0;
+  let usaholesUp = 0;
+  let europeholesUp = 0;
   let isFinal = false;
   let isDormi = false;
   while (thru <= 17) {
@@ -154,19 +150,19 @@ const scoreSinglesMatchPlayContest = async (contest: SinglesMatchPlay, playerId:
     if (!canScoreHole) break;
 
     // get player1score
-    const player1score = playerIdToScorecard[team1.playerId].scores[thru].netStrokes;
+    const usaScore = playerIdToScorecard[usaPlayerId].scores[thru].netStrokes;
 
     // get player2score
-    const player2score = playerIdToScorecard[team2.playerId].scores[thru].netStrokes;
+    const europeScore = playerIdToScorecard[europePlayerId].scores[thru].netStrokes;
 
-    if (player1score < player2score) {
-      player1holesUp++;
-    } else if (player2score < player1score) {
-      player2holesUp++;
+    if (usaScore < europeScore) {
+      usaholesUp++;
+    } else if (europeScore < usaScore) {
+      europeholesUp++;
     }
 
     // check if match is over
-    const netHoles = Math.abs(player1holesUp - player2holesUp);
+    const netHoles = Math.abs(usaholesUp - europeholesUp);
     const holesLeft = 17 - thru;
     if (netHoles > holesLeft) {
       isFinal = true;
@@ -178,27 +174,33 @@ const scoreSinglesMatchPlayContest = async (contest: SinglesMatchPlay, playerId:
     thru++
   }
 
-  const { leaderboard } = contest;
+  let { leaderboard } = matchup;
   let winningPlayerId = '';
   let losingPlayerId = '';
-  if (player1holesUp > player2holesUp) {
-    winningPlayerId = team1.playerId
-    losingPlayerId = team2.playerId
-  } else if (player2holesUp > player1holesUp) {
-    winningPlayerId = team2.playerId
-    losingPlayerId = team1.playerId
+  if (usaholesUp > europeholesUp) {
+    winningPlayerId = usaPlayerId
+    losingPlayerId = europePlayerId
+  } else if (europeholesUp > usaholesUp) {
+    winningPlayerId = europePlayerId
+    losingPlayerId = usaPlayerId
   }
 
-  leaderboard[singleMatchupId] = {
+  leaderboard = {
     thru,
     winningPlayerId,
     losingPlayerId,
-    holesUp: Math.abs(player2holesUp - player1holesUp),
+    holesUp: Math.abs(usaholesUp - europeholesUp),
     isFinal,
     isDormi
   }
 
   const newContests: ContestModel[] = [ contest ]
+
+  // check if contest is over
+  const isContestOver = singleMatchups.every(({ leaderboard: { isFinal } }) => isFinal);
+  if (isContestOver) {
+    contest.status = 'closed';
+  }
 
   // check if part of ryder cup contest and score
   const { ryderCupContestId } = contest;
@@ -209,16 +211,19 @@ const scoreSinglesMatchPlayContest = async (contest: SinglesMatchPlay, playerId:
       throw new Error()
     }
     const ryderCupContestLeaderboard: RyderCupLeaderboard = {
-      [ryderContest.teams[0].id]: 0,
-      [ryderContest.teams[1].id]: 0
+      USA: 0,
+      EUROPE: 0
     }
-    for (const matchupId in leaderboard) {
-      const { winningPlayerId, isFinal } = leaderboard[matchupId];
+
+    const usaPlayerIds = new Set<string>(ryderContest.teams.USA.players.map(p => p.playerId))
+
+    for (const { leaderboard } of singleMatchups) {
+      const { winningPlayerId, isFinal } = leaderboard;
       if (isFinal) {
-        if (ryderContest.teams[0].userIds.includes(winningPlayerId)) {
-          ryderCupContestLeaderboard[ryderContest.teams[0].id]++
+        if (usaPlayerIds.has(winningPlayerId)) {
+          ryderCupContestLeaderboard.USA++
         } else {
-          ryderCupContestLeaderboard[ryderContest.teams[1].id]++
+          ryderCupContestLeaderboard.EUROPE++
         }
 
       }
@@ -243,24 +248,27 @@ const scoreBestBallContest = async (contest: BestBallMatchPlay, playerId: string
 
   // find the matchup
   const { teamMatchups } = contest;
-  let teamMatchupId: string = '';
-  for (const matchupId in teamMatchups) {
-    const [ team1, team2 ] = teamMatchups[matchupId];
 
-    if ([ team1.player1Id, team1.player2Id, team2.player1Id, team2.player2Id ].includes(playerId)) {
-      teamMatchupId = matchupId;
-      break;
-    }
-  }
-  if (!teamMatchupId) {
+  const matchup = teamMatchups.find(({ teams: { USA, EUROPE } }) => {
+    const playerIds = new Set<string>([ ...USA.players.map(p => p.playerId), ...EUROPE.players.map(p => p.playerId)]);
+    return playerIds.has(playerId)
+  })
+
+  if (!matchup) {
     logger.error('couldnt find players matchup on best ball contest', contest, playerId);
     throw new Error ()
   }
 
 
   const { id } = contest;
-  const [ team1, team2 ] = teamMatchups[teamMatchupId];
-  const playerIds = [ team1.player1Id, team1.player2Id, team2.player1Id, team2.player2Id ];
+  const {
+    teams: {
+      USA: { players: usaPlayers },
+      EUROPE: { players: europePlayers }
+    }
+  } = matchup;
+
+  const playerIds = [ ...usaPlayers.map(p => p.playerId), ...europePlayers.map(p => p.playerId) ];
 
   const collection = await scorecardModel.getScorecardCollection();
   const scorecardCursor = await collection.find({ 
@@ -274,8 +282,8 @@ const scoreBestBallContest = async (contest: BestBallMatchPlay, playerId: string
 
 
   let thru = 0;
-  let team1holes = 0;
-  let team2holes = 0;
+  let usaholes = 0;
+  let europeholes = 0;
   let isFinal = false;
   let isDormi = false;
   while (thru <= 17) {
@@ -284,26 +292,24 @@ const scoreBestBallContest = async (contest: BestBallMatchPlay, playerId: string
     if (!canScoreHole) break;
 
     // get team1 best score
-    const team1Score = Math.min(
-      playerIdToScorecard[team1.player1Id].scores[thru].netStrokes,
-      playerIdToScorecard[team1.player2Id].scores[thru].netStrokes
+    const usaScore = Math.min(
+      ...usaPlayers.map(u => playerIdToScorecard[u.playerId].scores[thru].netStrokes)
     );
 
     // get team 2 best score
-    const team2Score = Math.min(
-      playerIdToScorecard[team2.player1Id].scores[thru].netStrokes,
-      playerIdToScorecard[team2.player2Id].scores[thru].netStrokes
+    const europeScore = Math.min(
+      ...europePlayers.map(u => playerIdToScorecard[u.playerId].scores[thru].netStrokes)
     );
 
     // figure out who won the hole
-    if (team1Score < team2Score) {
-      team1holes++
-    } else if (team2Score < team1Score) {
-      team2holes++
+    if (usaScore < europeScore) {
+      usaholes++
+    } else if (europeScore < usaScore) {
+      europeholes++
     }
 
     // check if match is over
-    const netHoles = Math.abs(team2holes - team1holes);
+    const netHoles = Math.abs(europeholes - usaholes);
     const holesLeft = 17 - thru;
     if (netHoles > holesLeft) {
       isFinal = true;
@@ -314,31 +320,30 @@ const scoreBestBallContest = async (contest: BestBallMatchPlay, playerId: string
   }
 
 
-  const { leaderboard } = contest;
-  let winningTeamId = '';
-  let losingTeamId = '';
-  if (team1holes > team2holes) {
-    winningTeamId = team1.teamId
-    losingTeamId = team2.teamId
-  } else if (team2holes > team1holes) {
-    winningTeamId = team2.teamId
-    losingTeamId = team1.teamId
+  let winningTeamName = '';
+  let losingTeamName = '';
+  if (usaholes > europeholes) {
+    winningTeamName = 'USA'
+    losingTeamName = 'EUROPE'
+  } else if (europeholes > usaholes) {
+    winningTeamName = 'EUROPE'
+    losingTeamName = 'USA'
   }
 
   // change match leaderboard
-  leaderboard[teamMatchupId] = {
+  matchup.leaderboard = {
     thru,
-    winningTeamId,
-    losingTeamId,
-    holesUp: Math.abs(team2holes - team1holes),
+    winningTeamName,
+    losingTeamName,
+    holesUp: Math.abs(europeholes - usaholes),
     isFinal,
     isDormi
   }
 
-  const newContests: ContestModel[] = [contest];
+  const newContests: ContestModel[] = [ contest ];
 
   // check if contest is over
-  const isContestOver = Object.values(leaderboard).every(({ isFinal }) => isFinal);
+  const isContestOver = teamMatchups.every(({ leaderboard: { isFinal } }) => isFinal);
   if (isContestOver) {
     contest.status = 'closed';
   }
@@ -352,13 +357,13 @@ const scoreBestBallContest = async (contest: BestBallMatchPlay, playerId: string
       throw new Error()
     }
     const ryderCupContestLeaderboard: RyderCupLeaderboard = {
-      [ryderContest.teams[0].id]: 0,
-      [ryderContest.teams[1].id]: 0
+      USA: 0,
+      EUROPE: 0
     }
-    for (const matchupId in leaderboard) {
-      const { winningTeamId, isFinal } = leaderboard[matchupId];
+    for (const { leaderboard } of teamMatchups) {
+      const { winningTeamName, isFinal } = leaderboard;
       if (isFinal) {
-        ryderCupContestLeaderboard[winningTeamId]++
+        ryderCupContestLeaderboard[winningTeamName]++
       }
     }
     newContests.push(ryderContest)
