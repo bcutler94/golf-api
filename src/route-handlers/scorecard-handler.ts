@@ -1,5 +1,5 @@
 import { v4 } from "uuid";
-import contestModel, { BestBallMatchPlay, ContestModel, RyderCupContest, RyderCupLeaderboard, SinglesMatchPlay } from "../models/contest-model";
+import contestModel, { BestBallMatchPlay, ContestModel, RyderCupContest, RyderCupLeaderboard, SinglesMatchPlay, TeamNames } from "../models/contest-model";
 import courseModel from "../models/course-model";
 import scorecardModel, { HoleScore, ScorecardModel } from "../models/scorecard-model";
 import userModel from "../models/user-model";
@@ -320,8 +320,8 @@ const scoreBestBallContest = async (contest: BestBallMatchPlay, playerId: string
   }
 
 
-  let winningTeamName = '';
-  let losingTeamName = '';
+  let winningTeamName: TeamNames | '' = '';
+  let losingTeamName: TeamNames | '' = '';
   if (usaholes > europeholes) {
     winningTeamName = 'USA'
     losingTeamName = 'EUROPE'
@@ -363,7 +363,12 @@ const scoreBestBallContest = async (contest: BestBallMatchPlay, playerId: string
     for (const { leaderboard } of teamMatchups) {
       const { winningTeamName, isFinal } = leaderboard;
       if (isFinal) {
-        ryderCupContestLeaderboard[winningTeamName]++
+        if (winningTeamName) {
+          ryderCupContestLeaderboard[winningTeamName]++
+        } else {
+          ryderCupContestLeaderboard.USA += 0.5
+          ryderCupContestLeaderboard.EUROPE += 0.5
+        }
       }
     }
     newContests.push(ryderContest)

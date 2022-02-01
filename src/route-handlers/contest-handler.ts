@@ -228,7 +228,7 @@ const addRyderCupContestInfo = async (singleDayContest: SingleDayContests): Prom
       break;
     }
     case 'individual-stroke-play': {    
-      singleDayContest.players = [ ...USA.players, ...EUROPE.players].map(player => {
+      singleDayContest.players = [ ...USA.players, ...EUROPE.players ].map(player => {
         return {
           ...player,
           score: 0,

@@ -24,9 +24,9 @@ export const SCORING_TYPE = [
 ] as const;
 
 export const TEAM_NAMES = [
-    'USA',
-    'EUROPE'
-]
+  'USA',
+  'EUROPE'
+] as const;
 
 
 export type ContestTypes = typeof CONTEST_TYPES[number]
@@ -64,14 +64,14 @@ export interface Player {
 }
 
 type Teams = {
-  [key: TeamNames]: {
+  [key in TeamNames]: {
     captain: Player
     players: Player[]
   }
 }
 
 export type RyderCupLeaderboard = { 
-  [teamName: TeamNames]: number
+  [teamName in TeamNames]: number
 }
 export interface RyderCupContest extends MultiDayContestBase {
   type: 'ryder-cup'
@@ -84,7 +84,6 @@ export interface RyderCupContest extends MultiDayContestBase {
 interface StrokePlayPlayer extends Player {
   score: number
   thru: number
-  teamName?: TeamNames
 }
 
 export type IndividualStrokePlayLeaderboard = StrokePlayPlayer[]
@@ -97,7 +96,7 @@ export interface IndividualStrokePlay extends SingleDayContestBase {
 export type TeamMatchup = {
   leaderboard: BestBallMatchPlayLeaderboard
   teams: {
-    [key: TeamNames]: {
+    [key in TeamNames]: {
       players: Player[]
     }
   }
@@ -107,8 +106,8 @@ export type TeamMatchup = {
 export type BestBallMatchPlayLeaderboard = {
   thru: number
   holesUp: number
-  winningTeamName: TeamNames
-  losingTeamName: TeamNames
+  winningTeamName: TeamNames | ''
+  losingTeamName: TeamNames | ''
   isFinal: boolean
   isDormi: boolean
 }
@@ -162,13 +161,6 @@ const getUserContests = async (userId: string): Promise<ContestModel[]> => {
   const collection = await getContestCollection();
   logger.info('userif', userId)
   return await collection.find({ 
-    // $or: [
-    //   { 'teams.userIds': userId },
-    //   { 'adminIds': userId },
-    //   { 'teamMatchups.team'}
-    //   { $expr: { $in: [ userId, { $ifNull: ['$teamMatchups.teams.userIds', [] ] } ] } },
-    //   { $expr: { $eq: [ userId, { $ifNull: ['$singleMatchups.user.userId', [] ] } ] } },
-    // ],
     userIds: userId,
     ryderCupContestId: null
   }).toArray()
