@@ -113,7 +113,7 @@ const scoreSinglesMatchPlayContest = async (contest: SinglesMatchPlay, playerId:
 
   const matchup = contest.singleMatchups.find(sm => sm.teams.EUROPE.playerId === playerId || sm.teams.USA.playerId === playerId );
   if (!matchup) {
-    logger.error('couldnt find players matchup on best ball contest', contest, playerId);
+    logger.error('couldnt find players matchup on singles match play contest', contest, playerId);
     throw new Error ()
   }
 
@@ -250,7 +250,7 @@ const scoreBestBallContest = async (contest: BestBallMatchPlay, playerId: string
   const { teamMatchups } = contest;
 
   const matchup = teamMatchups.find(({ teams: { USA, EUROPE } }) => {
-    const playerIds = new Set<string>([ ...USA.players.map(p => p.playerId), ...EUROPE.players.map(p => p.playerId)]);
+    const playerIds = new Set<string>([ ...USA.players.map(p => p.playerId), ...EUROPE.players.map(p => p.playerId) ]);
     return playerIds.has(playerId)
   })
 

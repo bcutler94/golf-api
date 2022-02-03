@@ -2,7 +2,7 @@ import { Db, MongoClient } from "mongodb";
 import logger from "../util/logger";
 
 // Replace the uri string with your MongoDB deployment's connection string.
-export const uri = 'mongodb+srv://bcutler94:Liverpool13@golf.hylhc.mongodb.net/golf-db?retryWrites=true&w=majority' || process.env.DATABASE_URL || 'mongodb://localhost:27017?replicaSet=rs0';
+export const uri = process.env.DATABASE_URL || 'mongodb://localhost:27017?replicaSet=rs0';
 
 let client: MongoClient;
 

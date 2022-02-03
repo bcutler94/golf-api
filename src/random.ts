@@ -7,7 +7,7 @@ import ghinApi, { GHINGolfer } from "./networking/ghin-api";
 import processGolfers from "./pubsub/jobs/process-golfers";
 import pubsub from "./pubsub/pubsub";
 import contestHandler from "./route-handlers/contest-handler";
-// import createContests from "./scripts/createContests";
+import createContests from "./scripts/createContests";
 import createUsers from "./scripts/createUsers";
 import scoreHoles from "./scripts/scoreHole";
 import scrapeCourses from "./scripts/scrapeCourses";
@@ -20,35 +20,12 @@ import logger from "./util/logger";
 const scriptToRun = async () => {
   await database.startDB()
   await pubsub.startPubSub({ attachListeners: false })
-  // insert here below here
-  // const cc = await courseModel.getCourseCollection();
-  // const cursor = await cc.aggregate([
-  //   {
-  //     '$group': {
-  //       '_id': '$externalId', 
-  //       'count': {
-  //         '$sum': 1
-  //       }
-  //     }
-  //   }, {
-  //     '$sort': {
-  //       'count': -1
-  //     }
-  //   }
-  // ])
-  // const externalIds = new Set<string> ()
-  // await cursor.forEach(doc => {
-  //   if (doc.count > 1) {
-  //     externalIds.add(doc._id)
-  //   }
-  // })
-  // for (const i of externalIds) {
-  //   await cc.deleteOne({ externalId: i })
-  // }
 
+
+  // await createUsers(100)
 
   // await createContests(['best-ball-match-play', 'singles-match-play'], true)
-  // await scoreHoles('59cb1aa1-6cbc-4869-a475-74457bd41773', 0)
+  await scoreHoles('92663166-c857-48a6-a55a-f1a0077c7ec9', 0)
 }
 
 const start = async () => {

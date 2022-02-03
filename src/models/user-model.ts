@@ -1,6 +1,5 @@
 import { WithId } from 'mongodb';
 import database from '../data-layer/database';
-import db from '../data-layer/database';
 import logger from '../util/logger';
 
 export interface UserModel {

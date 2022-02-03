@@ -33,103 +33,6 @@ interface SingleMatchPlayCreation extends ContestCreationBase {
 
 export type ContestCreation =  RyderCupCreation | IndividualStrokePlayCreation | BestBallMatchPlayCreation | SingleMatchPlayCreation
 
-// const addPlayerToChildContest = (contest: SingleDayContests, userId: string, teamName: string, otherteamName: string): SingleDayContests => {
-
-//   const { type, userIds } = contest;
-//   userIds.push(userId);
-
-//   switch (type) {
-//     case 'individual-stroke-play':
-//       const { players, userIds } = contest
-//       players.push({ playerId: userId, teamName });
-//       return contest;
-//     case 'singles-match-play':
-//       const { singleMatchups } = contest;
-
-//       // try and add player to team matchup that may not have a player yet
-//       let addedSinglePlayer = false;
-
-//       for (const sm of singleMatchups) {
-
-//         if (player1.teamName === teamName) {
-//           if (!player1.playerId) {
-//             player1.playerId = userId;
-//             addedSinglePlayer = true
-//             break;
-//           }
-//         } else {
-//           if (!player2.playerId) {
-//             player2.playerId = userId;
-//             addedSinglePlayer = true
-//             break;
-//           }
-//         }
-//       }
-
-//       // otherwise just create new entry and add player
-//       if (!addedSinglePlayer) {
-//         singleMatchups[v4()] = [
-//           { playerId: userId, teamName },
-//           { playerId: '', teamName: otherteamName }
-//         ]
-//       }
-
-//       return contest;
-
-//     case 'best-ball-match-play':
-//       const { teamMatchups } = contest;
-
-//       // try and add player to team matchup that may not have a player yet
-//       let addedTeamPlayer = false;
-//       for (const matchupId in teamMatchups) {
-
-//         const [ team1, team2 ] = teamMatchups[matchupId]
-
-//         // add to team 1
-//         if (team1.teamName === teamName) {
-
-//           if (!team1.player1Id) {
-//             team1.player1Id = userId;
-//             addedTeamPlayer = true
-//             break;
-//           }
-
-//           if (!team1.player2Id) {
-//             team1.player2Id = userId;
-//             addedTeamPlayer = true;
-//             break;
-//           }
-
-//         // add to team 2
-//         } else {
-
-//           if (!team2.player1Id) {
-//             team2.player1Id = userId;
-//             addedTeamPlayer = true;
-//             break;
-//           }
-
-//           if (!team2.player2Id) {
-//             team2.player2Id = userId;
-//             addedTeamPlayer = true;
-//             break;
-//           }
-
-//         }
-//       }
-
-//       // otherwise just create new entry and add player
-//       if (!addedTeamPlayer) {
-//         teamMatchups[v4()] = [
-//           { player1Id: userId, player2Id: '', teamName },
-//           { player1Id: '', player2Id: '', teamName: otherteamName },
-//         ]
-//       }
-//       return contest;
-
-//   }
-// }
-
 const addRyderCupContestInfo = async (singleDayContest: SingleDayContests): Promise<SingleDayContests> => {
 
   const { ryderCupContestId } = singleDayContest;
@@ -142,7 +45,7 @@ const addRyderCupContestInfo = async (singleDayContest: SingleDayContests): Prom
   }
 
   // pull single contest data over to ryder cup
-  ryderCup.contestIds.push(singleDayContest.id)
+  !ryderCup.contestIds.includes(singleDayContest.id) && ryderCup.contestIds.push(singleDayContest.id)
   ryderCup.leaderboard[singleDayContest.id] = {
     USA: 0,
     EUROPE: 0
@@ -166,7 +69,7 @@ const addRyderCupContestInfo = async (singleDayContest: SingleDayContests): Prom
 
   // pull userIds and change name to session
   singleDayContest.userIds = userIds;
-  singleDayContest.name = `Session ${contestIds.length + 1}`;
+  singleDayContest.name = `Session ${contestIds.length}`;
 
   switch (singleDayContest.type) {
     case 'best-ball-match-play': {
@@ -246,7 +149,6 @@ const addRyderCupContestInfo = async (singleDayContest: SingleDayContests): Prom
 
 }
 
-// TODO clean this fucking method up jesus
 const createContest = async (userId: string, contest: ContestCreation) => {
 
   let contestInput: ContestModel;
@@ -276,7 +178,7 @@ const createContest = async (userId: string, contest: ContestCreation) => {
         name: contest.name,
         status: 'queued',
         leaderboard: {},
-        userIds: [ userId ]
+        userIds: [  ]
       }
       contestInput = ryderCupContest;
       break;
@@ -291,7 +193,7 @@ const createContest = async (userId: string, contest: ContestCreation) => {
         courseId: contest.courseId,
         scoringType: contest.scoringType,
         ryderCupContestId: contest.ryderCupContestId,
-        userIds: [ userId ]
+        userIds: [ ]
       }
       contestInput = await addRyderCupContestInfo(bestBallContest);
       break;
@@ -307,7 +209,7 @@ const createContest = async (userId: string, contest: ContestCreation) => {
         courseId: contest.courseId,
         scoringType: contest.scoringType,
         ryderCupContestId: contest.ryderCupContestId,
-        userIds: [ userId ]
+        userIds: [ ]
       }
       contestInput = await addRyderCupContestInfo(singlesContest)
       break;
@@ -323,7 +225,7 @@ const createContest = async (userId: string, contest: ContestCreation) => {
         courseId: contest.courseId,
         scoringType: contest.scoringType,
         ryderCupContestId: contest.ryderCupContestId,
-        userIds: [ userId ]
+        userIds: [ ]
       }
       contestInput = await addRyderCupContestInfo(individualStrokeContest)
     break;
@@ -353,14 +255,14 @@ const joinTeam = async (contestId: string, userId: string): Promise<GetContest> 
         userIds 
       } = contest;
 
-      // add user to userIds
-      userIds.push(userId)
-
       // make sure not in any teams
       if (userIds.includes(userId)) {
         logger.error('this user is already in a team', contestId, userId)
         throw new Error ()
       }
+
+      // add user to userIds
+      userIds.push(userId)
 
       const userCollection = await userModel.getUserCollection();
       const u = await userCollection.findOne({ id: userId }, { projection: { firstName: 1, lastName: 1 }});
@@ -389,12 +291,14 @@ const joinTeam = async (contestId: string, userId: string): Promise<GetContest> 
         }
       } 
 
-      const newChildContests: SingleDayContests[] = [];
+      await contestModel.replaceContests([ contest ])
+
+      const newContests: ContestModel[] = [];
       for (const cc of childContests) {
-        newChildContests.push(await addRyderCupContestInfo(cc))
+        newContests.push(await addRyderCupContestInfo(cc))
       }
 
-      await contestModel.replaceContests(newChildContests)
+      await contestModel.replaceContests(newContests)
       break;
     case 'single-day':
       // TODO
@@ -403,75 +307,6 @@ const joinTeam = async (contestId: string, userId: string): Promise<GetContest> 
   return await contestModel.getContest(contestId);
 }
 
-// const attachLeaderboardToContest = (contest: ContestModel): void => {
-//   switch (contest.type) {
-//     case 'ryder-cup':
-//       const { contestIds, teams: [ team1Id, team2Id ] } = contest;
-//       const ryderCupLeaderboard: { [contestId: string]: RyderCupLeaderboard } = {}
-//       contestIds.forEach(contestId => {
-//         ryderCupLeaderboard[contestId] = {
-//           [team1Id.id]: 0,
-//           [team2Id.id]: 0,
-//         }
-//       });
-//       contest.leaderboard = ryderCupLeaderboard;
-//       return;
-//     case 'best-ball-match-play':
-//       const { teamMatchups } = contest
-//       const bestBallleaderboard: { [key: string]: BestBallMatchPlayLeaderboard } = {}
-//       for (const matchupId in teamMatchups) {
-//         bestBallleaderboard[matchupId] = {
-//           thru: 0,
-//           holesUp: 0,
-//           winningteamName: '',
-//           losingteamName: '',
-//           isFinal: false,
-//           isDormi: false
-//         }
-//       }
-//       contest.leaderboard = bestBallleaderboard;
-//       return;
-//     case 'singles-match-play':
-//       const { singleMatchups } = contest;
-//       const singlesMatchPlayLeaderboard: { [key: string]: SinglesMatchPlayLeaderboard } = {}
-//       for (const matchupId in singleMatchups) {
-//         singlesMatchPlayLeaderboard[matchupId] = {
-//           thru: 0,
-//           holesUp: 0,
-//           winningPlayerId: '',
-//           losingPlayerId: '',
-//           isFinal: false,
-//           isDormi: false
-//         }
-//       }
-//       contest.leaderboard = singlesMatchPlayLeaderboard;
-//       return
-//     case 'individual-stroke-play':
-//       const { players } = contest
-//       const individualStrokePlayLeaderboard: IndividualStrokePlayLeaderboard = players.map(player => {
-//         return {
-//           ...player,
-//           score: 0
-//         }
-//       })
-//       contest.leaderboard = individualStrokePlayLeaderboard
-//       return;
-//   }
-// }
-
-// const attachLeaderboardToContestData = (contestData: GetContest): void => {
-//   switch (contestData.type) {
-//     case 'single-day':
-//       attachLeaderboardToContest(contestData.contest);
-//       break;
-//     case 'multi-day':
-//       attachLeaderboardToContest(contestData.contest);
-//       break;
-//     default:
-//       logger.error('dont know how to start contest type', contestData)
-//       throw new Error ()
-//   }
-// }
 
 const startContest = async (contestId: string): Promise<GetContest> => {
 

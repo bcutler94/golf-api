@@ -159,7 +159,6 @@ const createContest = async (contest: ContestModel): Promise<ContestModel> => {
 
 const getUserContests = async (userId: string): Promise<ContestModel[]> => {
   const collection = await getContestCollection();
-  logger.info('userif', userId)
   return await collection.find({ 
     userIds: userId,
     ryderCupContestId: null
